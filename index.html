@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Studio Name — Handmade Ceramics</title>
+  <meta name="description" content="Handmade, wheel-thrown ceramics. Mugs, bowls, vases and more — each piece one of a kind.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="#" class="logo">Studio Name</a>
+      <nav class="nav">
+        <a href="#shop">Shop</a>
+        <a href="#about">About</a>
+        <a href="#contact">Contact</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="container hero-inner">
+        <p class="eyebrow">Handmade ceramics</p>
+        <h1>Pieces made slowly,<br>for everyday use.</h1>
+        <p class="lede">Wheel-thrown stoneware and porcelain, glazed and fired in small batches. Every piece is one of a kind.</p>
+        <a href="#shop" class="button">Browse the collection</a>
+      </div>
+    </section>
+
+    <section id="shop" class="shop">
+      <div class="container">
+        <div class="section-head">
+          <h2>Available work</h2>
+          <div class="filters" role="group" aria-label="Filter by category">
+            <!-- filter buttons are added by js/main.js -->
+          </div>
+        </div>
+        <div id="product-grid" class="product-grid" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <section id="about" class="about">
+      <div class="container about-inner">
+        <div class="about-image" aria-hidden="true"></div>
+        <div>
+          <h2>About the studio</h2>
+          <p>Replace this with your story — how you got into clay, where you work, what you love making, and what makes your pieces yours.</p>
+          <p>All work is food safe, and most pieces are microwave and dishwasher safe unless noted otherwise.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="contact" class="contact">
+      <div class="container">
+        <h2>Get in touch</h2>
+        <p>Interested in a piece, a commission, or a wholesale order? Send a note.</p>
+        <a class="button" id="contact-email" href="#">Email the studio</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>&copy; <span id="year"></span> Studio Name. All pieces handmade.</p>
+    </div>
+  </footer>
+
+  <!-- Product detail dialog -->
+  <dialog id="product-dialog" class="product-dialog">
+    <button class="dialog-close" aria-label="Close" data-close>&times;</button>
+    <div class="dialog-body"></div>
+  </dialog>
+
+  <script src="js/products.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

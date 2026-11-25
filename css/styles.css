@@ -1,0 +1,280 @@
+/* ---------- Design tokens ---------- */
+:root {
+  --bg: #f7f3ee;
+  --surface: #fffdfa;
+  --text: #2b2622;
+  --muted: #7a6f66;
+  --line: #e4dcd2;
+  --accent: #9c5b3c;      /* terracotta */
+  --accent-dark: #7d4529;
+  --sold: #b4aaa1;
+
+  --serif: "Cormorant Garamond", Georgia, serif;
+  --sans: "Inter", system-ui, -apple-system, sans-serif;
+
+  --radius: 6px;
+  --max: 1160px;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+img { max-width: 100%; display: block; }
+
+h1, h2, h3 {
+  font-family: var(--serif);
+  font-weight: 500;
+  line-height: 1.15;
+  margin: 0 0 .5em;
+}
+h1 { font-size: clamp(2.4rem, 6vw, 4rem); }
+h2 { font-size: clamp(1.8rem, 4vw, 2.5rem); }
+h3 { font-size: 1.4rem; }
+
+a { color: inherit; }
+
+.container {
+  width: 100%;
+  max-width: var(--max);
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+.button {
+  display: inline-block;
+  background: var(--accent);
+  color: #fff;
+  text-decoration: none;
+  padding: .8em 1.6em;
+  border-radius: var(--radius);
+  border: 0;
+  font: 500 .95rem var(--sans);
+  cursor: pointer;
+  transition: background .2s;
+}
+.button:hover { background: var(--accent-dark); }
+.button[disabled] { background: var(--sold); cursor: not-allowed; }
+
+/* ---------- Header ---------- */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgba(247, 243, 238, .92);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--line);
+}
+.header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+}
+.logo {
+  font-family: var(--serif);
+  font-size: 1.6rem;
+  text-decoration: none;
+}
+.nav { display: flex; gap: 1.5rem; }
+.nav a {
+  text-decoration: none;
+  font-size: .9rem;
+  letter-spacing: .04em;
+  color: var(--muted);
+}
+.nav a:hover { color: var(--text); }
+
+/* ---------- Hero ---------- */
+.hero { padding: clamp(4rem, 12vw, 8rem) 0; }
+.hero-inner { max-width: 720px; }
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: .15em;
+  font-size: .8rem;
+  color: var(--accent);
+  margin: 0 0 1rem;
+}
+.lede { font-size: 1.15rem; color: var(--muted); margin: 0 0 2rem; }
+
+/* ---------- Shop ---------- */
+.shop { padding: 4rem 0; background: var(--surface); border-block: 1px solid var(--line); }
+.section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+.filters { display: flex; flex-wrap: wrap; gap: .5rem; }
+.filters button {
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: .35em 1em;
+  font: .85rem var(--sans);
+  color: var(--muted);
+  cursor: pointer;
+}
+.filters button[aria-pressed="true"] {
+  background: var(--text);
+  border-color: var(--text);
+  color: #fff;
+}
+
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 2rem 1.5rem;
+}
+
+.product-card {
+  background: none;
+  border: 0;
+  padding: 0;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+.product-card .thumb {
+  aspect-ratio: 4 / 5;
+  border-radius: var(--radius);
+  overflow: hidden;
+  position: relative;
+  background: var(--line);
+}
+.product-card .thumb img,
+.product-card .thumb .placeholder {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform .4s;
+}
+.product-card:hover .thumb img,
+.product-card:hover .thumb .placeholder { transform: scale(1.04); }
+
+.badge {
+  position: absolute;
+  top: .75rem;
+  left: .75rem;
+  background: var(--surface);
+  font-size: .75rem;
+  padding: .2em .7em;
+  border-radius: 999px;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+.product-card.is-sold .thumb { opacity: .6; }
+
+.product-card .meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: .75rem;
+}
+.product-card .name { font-family: var(--serif); font-size: 1.25rem; }
+.product-card .price { color: var(--muted); white-space: nowrap; }
+
+/* Glaze-swatch placeholder used until real photos are added */
+.placeholder {
+  display: grid;
+  place-items: end center;
+  background:
+    radial-gradient(ellipse 36% 40% at 50% 50%, var(--glaze, #c9b8a6) 98%, transparent 100%),
+    radial-gradient(ellipse 44% 10% at 50% 88%, rgba(0,0,0,.16), transparent 70%),
+    linear-gradient(180deg, #efe8df, #e3d9cd);
+}
+
+/* ---------- About ---------- */
+.about { padding: 5rem 0; }
+.about-inner {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 3rem;
+  align-items: center;
+}
+.about-image {
+  aspect-ratio: 1;
+  border-radius: var(--radius);
+  background: linear-gradient(135deg, #d8c6b3, #a98a6f);
+}
+.about p { color: var(--muted); }
+
+/* ---------- Contact ---------- */
+.contact {
+  padding: 5rem 0;
+  text-align: center;
+  background: var(--surface);
+  border-top: 1px solid var(--line);
+}
+.contact p { color: var(--muted); margin-bottom: 2rem; }
+
+/* ---------- Footer ---------- */
+.site-footer {
+  padding: 2rem 0;
+  font-size: .85rem;
+  color: var(--muted);
+  text-align: center;
+}
+
+/* ---------- Product dialog ---------- */
+.product-dialog {
+  width: min(900px, calc(100% - 32px));
+  max-height: calc(100dvh - 32px);
+  border: 0;
+  border-radius: 10px;
+  padding: 0;
+  background: var(--surface);
+  color: var(--text);
+}
+.product-dialog::backdrop { background: rgba(43, 38, 34, .55); }
+.dialog-close {
+  position: absolute;
+  top: .5rem;
+  right: .75rem;
+  background: none;
+  border: 0;
+  font-size: 2rem;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--muted);
+  z-index: 1;
+}
+.dialog-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+.dialog-body .thumb { aspect-ratio: 4 / 5; }
+.dialog-body .thumb img,
+.dialog-body .thumb .placeholder { width: 100%; height: 100%; object-fit: cover; }
+.dialog-info { padding: 2.5rem 2rem; }
+.dialog-info .price { font-size: 1.2rem; margin: 0 0 1rem; }
+.dialog-info dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: .3rem 1rem;
+  font-size: .9rem;
+  margin: 1.5rem 0;
+}
+.dialog-info dt { color: var(--muted); }
+.dialog-info dd { margin: 0; }
+
+/* ---------- Small screens ---------- */
+@media (max-width: 720px) {
+  .about-inner,
+  .dialog-body { grid-template-columns: 1fr; }
+  .dialog-body .thumb { aspect-ratio: 1; }
+  .dialog-info { padding: 1.5rem; }
+  .nav { gap: 1rem; }
+}
