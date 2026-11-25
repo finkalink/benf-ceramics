@@ -26,9 +26,15 @@
   }
 
   class GitHubStore {
-    constructor({ owner, repo, branch = "main", token }) {
-      Object.assign(this, { owner, repo, branch, token });
+    /** path: the JSON file this store reads and writes (site data by default). */
+    constructor({ owner, repo, branch = "main", token, path = DATA_PATH }) {
+      Object.assign(this, { owner, repo, branch, token, path });
       this.base = `${API}/repos/${owner}/${repo}`;
+    }
+
+    /** Repo info, or null if it doesn't exist / the token can't see it. */
+    async repoInfo() {
+      try { return await this.req(""); } catch (e) { if (e.kind === "notfound") return null; throw e; }
     }
 
     async req(path, { method = "GET", body } = {}) {
@@ -64,10 +70,15 @@
       return json;
     }
 
-    /** Current products.json and its blob sha. */
-    async load(ref = this.branch) {
-      const file = await this.req(`/contents/${DATA_PATH}?ref=${encodeURIComponent(ref)}`);
-      return { data: JSON.parse(b64ToUtf8(file.content)), sha: file.sha };
+    /** Current JSON file and its blob sha. With allowMissing, a missing file gives { data: null, sha: null }. */
+    async load(ref = this.branch, { allowMissing = false } = {}) {
+      try {
+        const file = await this.req(`/contents/${this.path}?ref=${encodeURIComponent(ref)}`);
+        return { data: JSON.parse(b64ToUtf8(file.content)), sha: file.sha };
+      } catch (e) {
+        if (allowMissing && e.kind === "notfound") return { data: null, sha: null };
+        throw e;
+      }
     }
 
     /**
@@ -82,8 +93,9 @@
       const headSha = ref.object.sha;
       const head = await this.req(`/git/commits/${headSha}`);
 
-      if (expectedSha) {
-        const current = await this.req(`/contents/${DATA_PATH}?ref=${headSha}`);
+      // expectedSha: sha we started from; null means "the file shouldn't exist yet"; undefined skips the check
+      if (expectedSha !== undefined) {
+        const current = await this.load(headSha, { allowMissing: true });
         if (current.sha !== expectedSha) {
           throw new GitHubError("The site was changed somewhere else since you opened this page.", 409, "conflict");
         }
@@ -102,7 +114,7 @@
         const blob = await this.req("/git/blobs", { method: "POST", body: { content: f.base64, encoding: "base64" } });
         entries.push({ path: f.path, mode: "100644", type: "blob", sha: blob.sha });
       }
-      entries.push({ path: DATA_PATH, mode: "100644", type: "blob", content: JSON.stringify(data, null, 2) + "\n" });
+      entries.push({ path: this.path, mode: "100644", type: "blob", content: JSON.stringify(data, null, 2) + "\n" });
       deletes.forEach((p) => entries.push({ path: p, mode: "100644", type: "blob", sha: null }));
 
       const tree = await this.req("/git/trees", { method: "POST", body: { base_tree: head.tree.sha, tree: entries } });
@@ -133,8 +145,13 @@
 
   /** Practice mode: reads the live data file, never writes anything. */
   class DemoStore {
-    constructor() { this.demo = true; }
+    constructor({ records = false } = {}) { this.demo = true; this.records = records; }
+    async repoInfo() { return { private: true, demo: true }; }
     async load() {
+      if (this.records) {
+        // Sample private records so practice mode shows how the archive works
+        return { data: { "006": { owner: "Sample: Mom", contact: "", date: "2026-11-20", paid: 20, method: "Venmo", delivery: "Pickup", notes: "Practice-mode example" } }, sha: "demo" };
+      }
       const res = await fetch("data/products.json", { cache: "no-store" });
       return { data: await res.json(), sha: "demo" };
     }

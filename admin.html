@@ -11,8 +11,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Instrument+Serif&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=202611241958">
-  <link rel="stylesheet" href="css/admin.css?v=202611241958">
+  <link rel="stylesheet" href="css/styles.css?v=202611242003">
+  <link rel="stylesheet" href="css/admin.css?v=202611242003">
 </head>
 <body class="admin">
 
@@ -48,7 +48,7 @@
       <ol class="connect__steps">
         <li>Open <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">GitHub → New fine-grained token</a> (sign in as <strong>finkalink</strong>).</li>
         <li>Name it <em>BEN F studio</em> and pick an expiration (1 year is fine).</li>
-        <li>Under <strong>Repository access</strong> choose <em>Only select repositories</em> → <strong>benf-ceramics</strong>.</li>
+        <li>Under <strong>Repository access</strong> choose <em>Only select repositories</em> → <strong>benf-ceramics</strong> and <strong>benf-records</strong> (your private archive).</li>
         <li>Under <strong>Permissions → Repository permissions</strong> set <strong>Contents</strong> to <em>Read and write</em>. Optional: <strong>Pages</strong> → <em>Read-only</em> (shows when the site is live).</li>
         <li>Click <strong>Generate token</strong>, copy it, and paste it below.</li>
       </ol>
@@ -98,6 +98,7 @@
         <div>
           <p class="label label--accent">Works for sale</p>
           <h1 class="title" id="works-title">Works</h1>
+          <p class="admin-stats" id="stats"></p>
         </div>
         <button type="button" class="btn" id="add-btn">
           <svg viewBox="0 0 24 24" aria-hidden="true" class="ico"><path d="M12 5v14M5 12h14"/></svg>
@@ -115,7 +116,7 @@
           <button type="button" data-show="all" aria-pressed="true">All</button>
           <button type="button" data-show="available" aria-pressed="false">Available</button>
           <button type="button" data-show="reserved" aria-pressed="false">On hold</button>
-          <button type="button" data-show="sold" aria-pressed="false">Sold</button>
+          <button type="button" data-show="archive" aria-pressed="false">Archive</button>
         </div>
       </div>
 
@@ -161,6 +162,8 @@
               <label><input type="radio" name="status" value="available"><span>Available</span></label>
               <label><input type="radio" name="status" value="reserved"><span>On hold</span></label>
               <label><input type="radio" name="status" value="sold"><span>Sold</span></label>
+              <label><input type="radio" name="status" value="gifted"><span>Gifted</span></label>
+              <label><input type="radio" name="status" value="kept"><span>Kept</span></label>
             </div>
           </fieldset>
           <datalist id="categories"></datalist>
@@ -179,9 +182,30 @@
 
         <!-- Placement -->
         <section class="group">
-          <h3>On the homepage</h3>
+          <h3>On the site</h3>
           <label class="check"><input type="checkbox" name="isNew"><span><strong>New from the kiln</strong><small>Shown in the "New from the kiln" row, newest number first (up to 3). If none are checked, the 3 highest numbers show automatically.</small></span></label>
+          <label class="check"><input type="checkbox" name="isHidden"><span><strong>Hide from the public site</strong><small>Keeps it in your archive here, but visitors won't see it.</small></span></label>
           <label class="check"><input type="checkbox" name="isHero"><span><strong>Feature at the top</strong><small>The large piece beside the headline. Only one at a time.</small></span></label>
+        </section>
+
+        <!-- Private record -->
+        <section class="group record" id="record" hidden>
+          <div class="group__head">
+            <h3 id="record-title">Record</h3>
+            <span class="record__lock"><svg viewBox="0 0 24 24" aria-hidden="true" class="ico"><rect x="5" y="11" width="14" height="9" rx="1"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Private, never shown on the site</span>
+          </div>
+          <p class="group__hint record__setup" id="record-setup" hidden></p>
+          <div class="fields fields--2" id="record-fields">
+            <div class="field" data-r="owner"><label for="r-owner" id="r-owner-label">Owner</label><input id="r-owner" name="r_owner" autocomplete="off"></div>
+            <div class="field" data-r="contact"><label for="r-contact">Their email or phone <span class="field__opt">(optional)</span></label><input id="r-contact" name="r_contact" autocomplete="off"></div>
+            <div class="field" data-r="date"><label for="r-date" id="r-date-label">Date</label><input id="r-date" name="r_date" type="date"></div>
+            <div class="field" data-r="paid"><label for="r-paid" id="r-paid-label">Price paid ($)</label><input id="r-paid" name="r_paid" type="number" min="0" step="1" inputmode="numeric"></div>
+            <div class="field" data-r="method"><label for="r-method">Paid by</label>
+              <select id="r-method" name="r_method"><option value="">—</option><option>Venmo</option><option>Cash</option><option>Check</option><option>Other</option></select></div>
+            <div class="field" data-r="delivery"><label for="r-delivery">Handed off by</label>
+              <select id="r-delivery" name="r_delivery"><option value="">—</option><option>Pickup</option><option>Hand-delivered</option><option>Shipped</option></select></div>
+            <div class="field fields__full" data-r="notes"><label for="r-notes" id="r-notes-label">Notes</label><textarea id="r-notes" name="r_notes" rows="3" placeholder="Anything to remember: what they'll use it for, a thank-you note, shipping tracking…"></textarea></div>
+          </div>
         </section>
 
         <!-- Placeholder drawing -->
@@ -247,8 +271,8 @@
 
   <input type="file" id="file-input" accept="image/*" multiple hidden>
 
-  <script src="js/pottery.js?v=202611241958"></script>
-  <script src="js/github.js?v=202611241958"></script>
-  <script src="js/admin.js?v=202611241958"></script>
+  <script src="js/pottery.js?v=202611242003"></script>
+  <script src="js/github.js?v=202611242003"></script>
+  <script src="js/admin.js?v=202611242003"></script>
 </body>
 </html>

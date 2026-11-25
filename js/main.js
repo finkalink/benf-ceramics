@@ -34,7 +34,7 @@
     if (c) return c.type === "purchased" ? "yours" : "held-you";
     return "available";
   }
-  const STATUS_TEXT = { available: "Available", reserved: "On hold", sold: "Sold", "held-you": "Held for you", yours: "Yours" };
+  const STATUS_TEXT = { available: "Available", reserved: "On hold", sold: "Sold", gifted: "Gifted", kept: "Not for sale", "held-you": "Held for you", yours: "Yours" };
   const isAvailable = (p) => statusOf(p) === "available";
 
   /* ---------------- Artwork ---------------- */
@@ -310,13 +310,15 @@
       action = `<a class="btn btn--ghost btn--block" href="${mailto(`Waitlist: No. ${p.no} ${p.name}`, `Hi Ben, if No. ${p.no} (${p.name}) frees up, I'd love it.\n\n`)}">Ask to be next in line</a>
         <p class="room__note">Someone has this on hold. Holds last 48 hours.</p>`;
     } else {
-      action = `<a class="btn btn--ghost btn--block" href="${mailto(`Something like No. ${p.no}`, `Hi Ben, I loved the ${p.name}. Will you make another?\n\n`)}">Ask for one like it</a>`;
+      const why = { sold: "This one has found a home.", gifted: "This one was given as a gift.", kept: "I'm keeping this one for myself." }[st] || "";
+      action = `<a class="btn btn--ghost btn--block" href="${mailto(`Something like No. ${p.no}`, `Hi Ben, I loved the ${p.name}. Will you make another?\n\n`)}">Ask for one like it</a>
+        ${why ? `<p class="room__note">${why}</p>` : ""}`;
     }
 
     return `
       <p class="label label--accent">No. ${esc(p.no)} · ${esc(p.category)}</p>
       <h2 class="room__title" id="room-title">${esc(p.name)}</h2>
-      <p class="room__price">${st === "available" ? `${money.format(p.price)} <span class="room__suggest">suggested</span>` : ""}<span class="pill pill--${st === "held-you" ? "reserved" : st === "yours" ? "sold" : st}">${STATUS_TEXT[st]}</span></p>
+      <p class="room__price">${st === "available" ? `${money.format(p.price)} <span class="room__suggest">suggested</span>` : ""}<span class="pill pill--${st === "held-you" ? "reserved" : ["yours", "gifted", "kept"].includes(st) ? "sold" : st}">${STATUS_TEXT[st]}</span></p>
       <p class="room__desc">${esc(p.description)}</p>
       <dl class="specs">
         ${[["Clay", p.clay], ["Glaze", p.glaze], ["Size", p.size], ["Made", p.year]]
@@ -663,7 +665,7 @@
       if (!res.ok) throw new Error(res.status);
       const data = await res.json();
       SHOP = data.settings || {};
-      PRODUCTS = data.products || [];
+      PRODUCTS = (data.products || []).filter((p) => !p.hidden); // hidden = archive-only
     } catch (e) {
       $("#grid-empty").hidden = false;
       $("#grid-empty").textContent = "The collection couldn't load. Please refresh the page.";

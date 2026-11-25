@@ -9,6 +9,8 @@
     owner: onPages ? location.hostname.split(".")[0] : "finkalink",
     repo: (onPages && location.pathname.split("/")[1]) || "benf-ceramics",
     branch: "main",
+    recordsRepo: "benf-records",   // PRIVATE repo for owner names, prices paid, notes
+    recordsPath: "records.json",
   };
   // SHA-256 of "benf-admin:" + PIN. The PIN keeps casual visitors out of this
   // screen; the GitHub token (stored only on Ben's devices) is what allows changes.
@@ -30,7 +32,11 @@
   const money = (n) => `$${Number(n || 0).toLocaleString("en-US")}`;
   const slug = (s) => String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40) || "piece";
   const rand = () => Math.random().toString(36).slice(2, 7);
-  const STATUS = { available: "Available", reserved: "On hold", sold: "Sold" };
+  const STATUS = { available: "Available", reserved: "On hold", sold: "Sold", gifted: "Gifted", kept: "Kept" };
+  const ARCHIVE = ["sold", "gifted", "kept"];
+  const isArchived = (p) => ARCHIVE.includes(p.status);
+  const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
+  const RECORD_KEYS = ["owner", "contact", "date", "paid", "method", "delivery", "notes"];
   const store$ = {
     get: (k, s = localStorage) => { try { return s.getItem(k); } catch { return null; } },
     set: (k, v, s = localStorage) => { try { s.setItem(k, v); } catch { /* ignore */ } },
@@ -89,6 +95,13 @@
   const view = { show: "all", q: "" };
   let publishing = false;
 
+  // Private archive records, keyed by catalog no. Lives in a separate private repo.
+  let recordsStore = null;
+  let records = {};
+  let recordsSha = null;
+  let originalRecords = "{}";
+  let recordsState = "off";        // "ok" | "missing" | "noaccess" | "error" | "off"
+
   const isPending = (src) => typeof src === "string" && src.startsWith("pending:");
 
   function normalize(p) {
@@ -108,6 +121,7 @@
       clayColor: p.clayColor || "#B98A64",
       speckle: !!p.speckle,
       images: Array.isArray(p.images) ? p.images.filter(Boolean) : (p.image ? [p.image] : []),
+      hidden: !!p.hidden,
     };
   }
 
@@ -116,13 +130,31 @@
     data.products.forEach((p) => originals.set(p, JSON.stringify(p)));
     originalList = [...data.products];
     originalSettings = JSON.stringify(data.settings);
+    originalRecords = JSON.stringify(records);
   }
 
   function changes() {
     const changed = data.products.filter((p) => originals.get(p) !== JSON.stringify(p));
     const deleted = originalList.filter((p) => !data.products.includes(p));
     const settings = JSON.stringify(data.settings) !== originalSettings;
-    return { changed, deleted, settings, count: changed.length + deleted.length + (settings ? 1 : 0) };
+    const siteCount = changed.length + deleted.length + (settings ? 1 : 0);
+    const recordsChanged = JSON.stringify(records) !== originalRecords;
+    const recordsOnly = recordsChanged
+      ? Object.keys({ ...records, ...JSON.parse(originalRecords) })
+        .filter((no) => JSON.stringify(records[no]) !== JSON.stringify(JSON.parse(originalRecords)[no]))
+        .filter((no) => !changed.some((p) => p.no === no)).length
+      : 0;
+    return { changed, deleted, settings, siteCount, recordsChanged, count: siteCount + recordsOnly };
+  }
+
+  /* Records: tidy a record, dropping empty fields; null when nothing is left */
+  function cleanRecord(r) {
+    const out = {};
+    RECORD_KEYS.forEach((k) => {
+      const v = r && r[k];
+      if (v !== undefined && v !== null && String(v).trim() !== "") out[k] = k === "paid" ? Number(v) : String(v).trim();
+    });
+    return Object.keys(out).length ? out : null;
   }
 
   /* =========================================================
@@ -221,7 +253,7 @@
       btn.disabled = true;
       btn.textContent = "Checking…";
       try {
-        store = new GitHubStore({ ...CONFIG, token });
+        makeStores(token);
         await loadData();
         store$.set(TOKEN_KEY, token);
         $("#token").value = "";
@@ -238,6 +270,7 @@
 
     $("#demo-btn").addEventListener("click", async () => {
       store = new DemoStore();
+      recordsStore = new DemoStore({ records: true });
       await loadData();
       startApp();
     });
@@ -246,7 +279,7 @@
   async function afterUnlock() {
     const token = store$.get(TOKEN_KEY);
     if (!token) { showScreen("connect"); return; }
-    store = new GitHubStore({ ...CONFIG, token });
+    makeStores(token);
     try {
       await loadData();
       startApp();
@@ -263,8 +296,32 @@
   /* =========================================================
      3. Data
      ========================================================= */
+  function makeStores(token) {
+    store = new GitHubStore({ ...CONFIG, token });
+    recordsStore = new GitHubStore({ owner: CONFIG.owner, repo: CONFIG.recordsRepo, branch: CONFIG.branch, token, path: CONFIG.recordsPath });
+  }
+
+  /* Private records: a problem here never blocks editing the site */
+  async function loadRecords() {
+    records = {};
+    recordsSha = null;
+    if (!recordsStore) { recordsState = "off"; return; }
+    try {
+      const info = await recordsStore.repoInfo();
+      if (!info) { recordsState = "missing"; return; }
+      if (info.private === false) { recordsState = "public"; return; } // never write private notes to a public repo
+      const res = await recordsStore.load(undefined, { allowMissing: true });
+      records = res.data && typeof res.data === "object" ? res.data : {};
+      recordsSha = res.sha;
+      recordsState = "ok";
+    } catch (e) {
+      recordsState = e.kind === "auth" || e.kind === "notfound" ? "noaccess" : "error";
+    }
+  }
+
   async function loadData() {
     const res = await store.load();
+    await loadRecords();
     data = {
       settings: { name: "BEN F", currency: "USD", heroPiece: "", newPieces: [], ...res.data.settings },
       products: (res.data.products || []).map(normalize),
@@ -278,7 +335,8 @@
   function cleanData() {
     return {
       settings: data.settings,
-      products: data.products.map((p) => ({ ...p })),
+      // keep the public file tidy: only write "hidden" when it's on
+      products: data.products.map(({ hidden, ...p }) => (hidden ? { ...p, hidden: true } : p)),
     };
   }
 
@@ -351,19 +409,32 @@
 
   function renderList() {
     const q = view.q.trim().toLowerCase();
-    const list = sortedProducts().filter((p) =>
-      (view.show === "all" || p.status === view.show) &&
-      (!q || `${p.no} ${p.name} ${p.category} ${p.glaze}`.toLowerCase().includes(q)));
+    const matchesView = (p) => view.show === "all"
+      || (view.show === "archive" ? isArchived(p) : p.status === view.show);
+    const list = sortedProducts().filter((p) => matchesView(p) &&
+      (!q || `${p.no} ${p.name} ${p.category} ${p.glaze} ${records[p.no]?.owner || ""}`.toLowerCase().includes(q)));
 
     const total = data.products.length;
     const avail = data.products.filter((p) => p.status === "available").length;
+    const archived = data.products.filter(isArchived);
+    const raised = archived.reduce((sum, p) => sum + (p.status === "sold" ? Number(records[p.no]?.paid) || 0 : 0), 0);
+    const homes = data.products.filter((p) => ["sold", "gifted"].includes(p.status)).length;
     $("#works-title").textContent = `${total} work${total === 1 ? "" : "s"} · ${avail} available`;
+    $("#stats").textContent = archived.length
+      ? `${homes} out in the world${raised ? ` · ${money(raised)} raised for classes & studio time` : ""}`
+      : "";
 
     $("#works").innerHTML = list.map((p) => {
-      const changed = originals.get(p) !== JSON.stringify(p);
+      const changed = originals.get(p) !== JSON.stringify(p) || JSON.stringify(records[p.no]) !== JSON.stringify(JSON.parse(originalRecords)[p.no]);
+      const r = records[p.no] || {};
+      const who = { sold: "Sold to", gifted: "Given to", reserved: "Held for" }[p.status];
+      const meta = (isArchived(p) || p.status === "reserved") && (r.owner || r.paid || r.date)
+        ? [r.owner && who ? `${who} ${esc(r.owner)}` : "", r.paid ? money(r.paid) : "", r.date ? esc(r.date) : ""].filter(Boolean).join(" · ")
+        : `${money(p.price)}${p.glaze ? ` · ${esc(p.glaze)}` : ""}`;
       const tags = [
         data.settings.heroPiece === p.no ? '<span class="tag">Top</span>' : "",
         (data.settings.newPieces || []).includes(p.no) ? '<span class="tag tag--plain">New</span>' : "",
+        p.hidden ? '<span class="tag tag--plain">Hidden</span>' : "",
       ].join("");
       return `
         <li class="work${changed ? " is-changed" : ""}" data-no="${esc(p.no)}">
@@ -371,7 +442,7 @@
           <button type="button" class="work__main" data-edit>
             <span class="work__no">No. ${esc(p.no)} · ${esc(p.category)}${p.images.length ? ` · ${p.images.length} photo${p.images.length === 1 ? "" : "s"}` : ""}</span>
             <span class="work__name">${esc(p.name) || "<em>Untitled</em>"}${tags}</span>
-            <span class="work__meta">${money(p.price)}${p.glaze ? ` · ${esc(p.glaze)}` : ""}</span>
+            <span class="work__meta">${meta}</span>
           </button>
           <div class="work__side">
             <label class="sr-only" for="st-${esc(p.no)}">Status of ${esc(p.name)}</label>
@@ -411,7 +482,13 @@
       const p = data.products.find((x) => x.no === sel.closest(".work").dataset.no);
       p.status = sel.value;
       renderList();
-      toast(`No. ${esc(p.no)} marked <strong>${STATUS[p.status]}</strong>. Publish when you're ready.`);
+      if (["sold", "gifted", "reserved"].includes(p.status) && recordsState === "ok" && !records[p.no]?.owner) {
+        // Open the work so its new owner can be noted right away
+        openEditor(p, { focusRecord: true });
+        toast(`No. ${esc(p.no)} marked <strong>${STATUS[p.status]}</strong>. Add who has it, or tap Done to skip.`);
+      } else {
+        toast(`No. ${esc(p.no)} marked <strong>${STATUS[p.status]}</strong>. Publish when you're ready.`);
+      }
     });
     $("#search").addEventListener("input", (e) => { view.q = e.target.value; renderList(); });
     $$(".admin-tools .seg button").forEach((b) => b.addEventListener("click", () => {
@@ -437,7 +514,52 @@
     return String((nums.length ? Math.max(...nums) : 0) + 1).padStart(3, "0");
   }
 
-  function openEditor(p) {
+  /* Which record fields each status uses, and how they're labeled */
+  const RECORD_LAYOUT = {
+    reserved: { title: "Hold", owner: "Held for", date: "Held since", paid: "Agreed price ($)", fields: ["owner", "contact", "date", "paid", "notes"] },
+    sold: { title: "Sale record", owner: "Sold to", date: "Date sold", paid: "Price paid ($)", fields: ["owner", "contact", "date", "paid", "method", "delivery", "notes"] },
+    gifted: { title: "Gift record", owner: "Given to", date: "Date given", fields: ["owner", "contact", "date", "delivery", "notes"] },
+    kept: { title: "Keeping it", date: "Kept since", notes: "Why I'm keeping it", fields: ["date", "notes"] },
+  };
+
+  function renderRecord() {
+    const status = form.querySelector('input[name="status"]:checked')?.value || "available";
+    const layout = RECORD_LAYOUT[status];
+    const section = $("#record");
+    section.hidden = !layout;
+    if (!layout) return;
+    $("#record-title").textContent = layout.title;
+    $("#r-owner-label").textContent = layout.owner || "Owner";
+    $("#r-date-label").textContent = layout.date || "Date";
+    $("#r-paid-label").textContent = layout.paid || "Price paid ($)";
+    $("#r-notes-label").textContent = layout.notes || "Notes";
+    $$("#record-fields [data-r]").forEach((el) => { el.hidden = !layout.fields.includes(el.dataset.r); });
+    $("#r-paid").placeholder = draft.price ? `Suggested ${money(draft.price)}` : "";
+
+    const setup = $("#record-setup");
+    const ok = recordsState === "ok";
+    const msg = {
+      missing: `Private records need a private GitHub repository named <strong>${CONFIG.recordsRepo}</strong>. Once it exists and your access token includes it, these fields will save.`,
+      noaccess: `Your access token can't open the private <strong>${CONFIG.recordsRepo}</strong> repository. Edit the token on GitHub and add that repository (Contents: Read and write).`,
+      public: `<strong>${CONFIG.recordsRepo}</strong> is a public repository, so records are switched off to keep them private. Make it private on GitHub.`,
+      error: "Couldn't load your private records right now. Reload the page to try again.",
+      off: "Private records aren't available in this mode.",
+    }[recordsState];
+    setup.hidden = ok;
+    setup.innerHTML = ok ? "" : msg || "";
+    $$("#record-fields input, #record-fields select, #record-fields textarea").forEach((el) => { el.disabled = !ok; });
+  }
+
+  function fillRecord(r = {}) {
+    RECORD_KEYS.forEach((k) => { form.elements[`r_${k}`].value = r[k] ?? ""; });
+  }
+  function readRecord() {
+    const r = {};
+    RECORD_KEYS.forEach((k) => { r[k] = form.elements[`r_${k}`].value; });
+    return r;
+  }
+
+  function openEditor(p, { focusRecord = false } = {}) {
     target = p;
     draftRemoved = [];
     draft = p ? structuredClone(p) : normalize({
@@ -455,6 +577,9 @@
     f.speckle.checked = !!draft.speckle;
     f.isNew.checked = p ? (data.settings.newPieces || []).includes(p.no) : true;
     f.isHero.checked = p ? data.settings.heroPiece === p.no : false;
+    f.isHidden.checked = !!draft.hidden;
+    fillRecord(p ? records[p.no] : {});
+    if (focusRecord && !f.r_date.value && ["sold", "gifted", "reserved"].includes(draft.status)) f.r_date.value = today();
     draftTop = f.isHero.checked && draft.images.includes(data.settings.heroPhoto)
       ? data.settings.heroPhoto
       : draft.images[0] || null;
@@ -465,10 +590,17 @@
 
     renderPhotos();
     renderDrawing();
+    renderRecord();
     $("#drawing").open = draft.images.length === 0 && !p;
     editor.showModal();
     $(".sheet__body", editor).scrollTop = 0;
     if (!p) setTimeout(() => f.name.focus(), 60);
+    if (focusRecord && !$("#record").hidden) {
+      setTimeout(() => {
+        $("#record").scrollIntoView({ block: "start" });
+        if (recordsState === "ok") (f.r_owner.closest("[data-r]").hidden ? f.r_notes : f.r_owner).focus({ preventScroll: true });
+      }, 80);
+    }
   }
 
   function readForm() {
@@ -488,6 +620,7 @@
       clayColor: f.clayColor.value,
       speckle: f.speckle.checked,
       status: form.querySelector('input[name="status"]:checked')?.value || "available",
+      hidden: f.isHidden.checked,
     });
   }
 
@@ -617,6 +750,11 @@
     // Live drawing preview
     form.addEventListener("input", (e) => {
       if (["shape", "glazeColor", "clayColor", "speckle"].includes(e.target.name)) { readForm(); renderDrawing(); }
+      if (e.target.name === "status") {
+        // Date it when it leaves the studio
+        if (["sold", "gifted", "reserved"].includes(e.target.value) && !form.elements.r_date.value) form.elements.r_date.value = today();
+        renderRecord();
+      }
       e.target.classList.remove("is-touched");
     });
 
@@ -648,6 +786,7 @@
       const s = data.settings;
       s.newPieces = (s.newPieces || []).filter((n) => n !== target.no);
       if (s.heroPiece === target.no) { s.heroPiece = ""; s.heroPhoto = ""; }
+      delete records[target.no];
       editor.close();
       renderList();
       toast(`Deleted No. ${esc(target.no)}. Publish to update the site.`);
@@ -667,6 +806,14 @@
       data.products.push(target);
     }
     draftRemoved.forEach((src) => removedPaths.add(src));
+
+    // Private record: follows the work if it's renumbered; dropped if it's back on the shelf
+    if (recordsState === "ok") {
+      const rec = target.status === "available" ? null : cleanRecord(readRecord());
+      if (oldNo && oldNo !== target.no) delete records[oldNo];
+      if (rec) records[target.no] = rec;
+      else delete records[target.no];
+    }
 
     // Keep homepage references in step with a renumbered work
     s.newPieces = (s.newPieces || []).map((n) => (n === oldNo ? target.no : n));
@@ -733,6 +880,7 @@
     if (edited) parts.push(`update ${edited} work${edited === 1 ? "" : "s"}`);
     if (c.deleted.length) parts.push(`remove ${c.deleted.length} work${c.deleted.length === 1 ? "" : "s"}`);
     if (c.settings) parts.push("update shop settings");
+    // (private record details never appear in public commit messages)
     const msg = parts.join(", ") || "update works";
     return `Studio: ${msg.charAt(0).toUpperCase()}${msg.slice(1)}`;
   }
@@ -767,6 +915,25 @@
     const deletePaths = [...removedPaths].filter((p) => !stillUsed.has(p) && p.startsWith("images/"));
 
     try {
+      // 1. Private records go to the private repo first
+      if (c.recordsChanged && recordsState === "ok") {
+        $("#state").textContent = "Saving private records…";
+        const r = await recordsStore.publish({
+          data: records, message: "Studio: update records", expectedSha: recordsSha,
+        });
+        recordsSha = r.dataSha;
+        originalRecords = JSON.stringify(records);
+      }
+      if (!c.siteCount) {
+        publishing = false;
+        btn.classList.remove("is-busy");
+        renderList();
+        toast(store.demo ? "Practice mode: records would now be saved privately." : "Private records saved. (Nothing on the public site changed.)");
+        return;
+      }
+
+      // 2. Public site
+      $("#state").textContent = "Saving to GitHub…";
       const res = await store.publish({ data: out, addFiles, deletePaths, message: commitMessage(c), expectedSha: dataSha });
       // Local state now matches what's on GitHub
       data.products.forEach((p) => { p.images = p.images.map((s) => {

@@ -474,3 +474,20 @@ body.admin { background: var(--cream); min-height: 100dvh; }
 .photo__top:hover { background: var(--paper); }
 .photo__top[aria-pressed="true"] { background: var(--clay-deep); border-color: var(--clay-deep); color: var(--paper); }
 .photo:has(.photo__top[aria-pressed="true"]) { outline: 2px solid var(--clay-deep); outline-offset: 2px; }
+
+/* ---------- Archive / private records ---------- */
+.admin-stats { margin: 8px 0 0; color: var(--clay-deep); font: 500 .74rem/1.4 var(--sans); letter-spacing: .14em; text-transform: uppercase; }
+.admin-stats:empty { display: none; }
+.record { background: #fff; margin: 0 calc(var(--gutter) * -1); padding-inline: var(--gutter); border-top: 1px solid var(--hairline); }
+.record__lock { display: inline-flex; align-items: center; gap: 6px; font-size: .82rem; color: var(--stone-deep); }
+.record__lock .ico { width: 15px; height: 15px; }
+.record__setup { padding: 12px 14px; border: 1px dashed var(--clay-deep); color: var(--ink); margin-bottom: 14px; }
+.record [data-r][hidden] { display: none !important; }
+.record input:disabled, .record select:disabled, .record textarea:disabled { background: var(--cream); color: var(--stone-deep); cursor: not-allowed; }
+.seg--radios { grid-template-columns: repeat(5, 1fr); }
+@media (max-width: 520px) {
+  .seg--radios { grid-template-columns: repeat(3, 1fr); }
+  .seg--radios label:nth-child(n+4) span { border-top: 1px solid var(--ink); }
+  .seg--radios label:nth-child(4) span { border-left: 0; }
+}
+.status-select[data-v="gifted"], .status-select[data-v="kept"] { border-color: var(--stone-deep); color: var(--stone-deep); }

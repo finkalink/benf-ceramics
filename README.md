@@ -26,6 +26,18 @@ The token is stored only in that browser. *Practice mode* lets you try everythin
 the PIN alone can't stop a determined person who reads the page's code. The real lock is the
 GitHub token, which lives only on your devices. Without it, nothing on the site can be changed.
 
+### Archive: sold, gifted and kept pieces
+Statuses are **Available**, **On hold**, **Sold**, **Gifted** and **Kept** (shown publicly as "Not for sale").
+For anything that isn't available, the editor shows a **private record**: who has it, their contact,
+the date, the price paid, how it was paid and handed off, and notes. The list's **Archive** filter shows
+sold, gifted and kept pieces, and the header tallies how many are out in the world and what's been raised.
+
+Records are saved to the separate **private** repository `finkalink/benf-records` (file `records.json`),
+never to this public site. The Studio page refuses to save records if that repository is public.
+Your access token must include both `benf-ceramics` and `benf-records`.
+
+**Hide from the public site** keeps a piece in your archive while leaving it off the website.
+
 ### When someone reserves or buys
 You get an email with **RESERVED** or **PURCHASED** in the subject. Open the Studio page, set that work
 to *On hold* or *Sold*, and publish.
