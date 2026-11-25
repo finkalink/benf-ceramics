@@ -687,6 +687,7 @@
       closeMenu();
       f.elements.email.value = data.settings.email || "";
       f.elements.venmo.value = data.settings.venmo || "";
+      f.elements.web3formsKey.value = data.settings.web3formsKey || "";
       d.showModal();
     });
     $$("[data-close]", d).forEach((b) => b.addEventListener("click", () => d.close()));
@@ -695,6 +696,7 @@
       if (!f.reportValidity()) return;
       data.settings.email = f.elements.email.value.trim();
       data.settings.venmo = f.elements.venmo.value.trim().replace(/^@/, "");
+      data.settings.web3formsKey = f.elements.web3formsKey.value.trim();
       d.close();
       renderList();
     });

@@ -30,10 +30,12 @@ GitHub token, which lives only on your devices. Without it, nothing on the site 
 You get an email with **RESERVED** or **PURCHASED** in the subject. Open the Studio page, set that work
 to *On hold* or *Sold*, and publish.
 
-### One-time setup: email notifications
-Notices are sent through [FormSubmit](https://formsubmit.co) (free, no account needed).
-The **first** time the buy form is used, FormSubmit sends an "Activate form" email to your Gmail.
-Click the link in it once. Until you do, buyers see a fallback "Email it to me instead" link.
+### Email notifications
+Notices are sent through [Web3Forms](https://web3forms.com) (free, 250 a month) using the access key
+in **Studio → Shop settings → Web3Forms access key**. To change it, get a new key at web3forms.com
+(it's emailed to you), paste it there and publish. The key is meant to be public, so it's fine in the site's code.
+If the key is empty, the form falls back to FormSubmit. If sending ever fails, buyers see an
+"Email it to me instead" link, so no order is lost.
 
 ## Files
 | Path | What it is |

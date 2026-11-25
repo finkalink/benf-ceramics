@@ -390,6 +390,33 @@
     }
   }
 
+  /* Email Ben about a reservation or purchase.
+     Uses Web3Forms when a key is set in shop settings, otherwise FormSubmit. */
+  async function sendNotice(subject, fields, replyTo, fromName) {
+    let res;
+    if (SHOP.web3formsKey) {
+      res = await fetch("https://api.web3forms.com/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({
+          access_key: SHOP.web3formsKey,
+          subject,
+          from_name: `${fromName || "Someone"} via BEN F site`,
+          ...(replyTo ? { replyto: replyTo } : {}),
+          ...fields,
+        }),
+      });
+    } else {
+      res = await fetch(`https://formsubmit.co/ajax/${SHOP.email}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({ _subject: subject, _template: "table", _captcha: "false", ...(replyTo ? { _replyto: replyTo } : {}), ...fields }),
+      });
+    }
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok || String(json.success) !== "true") throw new Error(json.message || "Send failed");
+  }
+
   function wireBuyForm(p) {
     const form = $("#buy-form");
     const submit = $("#buy-submit");
@@ -422,10 +449,8 @@
       if (data._honey) { showView(thanksView(p, data)); return; }
 
       const verb = data.intent === "purchased" ? "PURCHASED" : "RESERVED";
-      const payload = {
-        _subject: `${verb}: No. ${p.no} ${p.name} (${money.format(p.price)})`,
-        _template: "table",
-        _captcha: "false",
+      const subject = `${verb}: No. ${p.no} ${p.name} (${money.format(p.price)})`;
+      const fields = {
         Status: verb,
         Piece: `No. ${p.no} · ${p.name}`,
         Price: money.format(p.price),
@@ -435,29 +460,23 @@
         Address: data.address || "",
         Note: data.note || "",
         Link: `${location.origin}${location.pathname}#piece-${p.no}`,
-        _replyto: /@/.test(data.contact) ? data.contact : undefined,
       };
+      const replyTo = /@/.test(data.contact) ? data.contact : undefined;
 
       submit.disabled = true;
       submit.textContent = "Sending…";
       try {
-        const res = await fetch(`https://formsubmit.co/ajax/${SHOP.email}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Accept: "application/json" },
-          body: JSON.stringify(payload),
-        });
-        const json = await res.json().catch(() => ({}));
-        if (!res.ok || String(json.success) !== "true") throw new Error(json.message || "Send failed");
+        await sendNotice(subject, fields, replyTo, data.name);
 
         saveClaim(p.no, data.intent);
         showView(thanksView(p, data));
         renderAll();
         observeReveals();
       } catch (ex) {
-        const body = Object.entries(payload)
-          .filter(([k, v]) => !k.startsWith("_") && v)
+        const body = Object.entries(fields)
+          .filter(([, v]) => v)
           .map(([k, v]) => `${k}: ${v}`).join("\n");
-        showError(`That didn't go through. <a href="${mailto(payload._subject, body)}">Email it to me instead</a> and I'll take care of it.`);
+        showError(`That didn't go through. <a href="${mailto(subject, body)}">Email it to me instead</a> and I'll take care of it.`);
         submit.disabled = false;
         syncLabels();
       }
