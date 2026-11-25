@@ -1,15 +1,15 @@
 {
   "settings": {
     "name": "BEN F",
-    "email": "bdfink.su@gmail.com",
-    "venmo": "finkalink",
     "currency": "USD",
     "heroPiece": "036",
     "newPieces": [
       "043",
       "042",
       "041"
-    ]
+    ],
+    "email": "bdfink.su@gmail.com",
+    "venmo": "finkalink"
   },
   "products": [
     {
@@ -24,8 +24,8 @@
       "glaze": "Tenmoku",
       "size": "8 in tall",
       "description": "A glossy, near-black glaze that breaks to rust wherever it thins. Holds a few stems or stands fine on its own.",
-      "glazeColor": "#3B2219",
-      "clayColor": "#B98A64",
+      "glazeColor": "#3b2219",
+      "clayColor": "#b98a64",
       "speckle": false,
       "images": []
     },
