@@ -1010,3 +1010,38 @@ strong { font-weight: 600; }
 
 /* Headline accent word */
 .display__accent { color: var(--clay-light); }
+
+/* ---------- Piece view: arrows on the photo step through its photos ---------- */
+.room__stage { position: relative; flex: 1 1 0; min-height: 0; display: flex; }
+.room__stage .room__frame { flex: 1 1 0; }
+.room__photo-arrow {
+  position: absolute;
+  top: 50%;
+  z-index: 1;
+  transform: translateY(-50%);
+  background: rgba(251, 248, 243, .92);
+  border-color: var(--hairline);
+  box-shadow: 0 2px 10px rgba(30, 27, 24, .08);
+}
+.room__photo-arrow[hidden] { display: none; }
+.room__photo-arrow--prev { left: 10px; }
+.room__photo-arrow--next { right: 10px; }
+@media (min-width: 900px) {
+  .room__photo-arrow--prev { left: 18px; }
+  .room__photo-arrow--next { right: 18px; }
+}
+.room__count { padding: 6px 0 12px; }
+.room__count:empty { padding: 0 0 12px; }
+@media (min-width: 900px) { .room__count { padding-bottom: 28px; } }
+
+.room__pieces {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 2.4rem;
+  padding-top: 1.2rem;
+  border-top: 1px solid var(--hairline);
+}
+.room__pieces .link { font-size: .7rem; color: var(--stone-deep); }
+.room__pieces .link:hover { color: var(--ink); }
+.room__count { width: 100%; max-width: none; text-align: center; align-self: stretch; }

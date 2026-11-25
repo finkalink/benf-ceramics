@@ -19,7 +19,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=202611242120">
+  <link rel="stylesheet" href="css/styles.css?v=202611242131">
   <script>document.documentElement.classList.add("js");</script>
 </head>
 <body>
@@ -213,17 +213,17 @@
   <!-- ============ PIECE VIEW ("gallery room") ============ -->
   <dialog class="room" id="room" aria-labelledby="room-title">
     <div class="room__art" id="room-art">
-      <div class="room__frame" id="room-frame"></div>
-      <div class="room__thumbs" id="room-thumbs" hidden></div>
-      <div class="room__arrows">
-        <button class="arrow" id="room-prev" aria-label="Previous piece">
+      <div class="room__stage">
+        <div class="room__frame" id="room-frame"></div>
+        <button class="arrow room__photo-arrow room__photo-arrow--prev" id="photo-prev" aria-label="Previous photo" hidden>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7"/></svg>
         </button>
-        <span class="room__count label" id="room-count"></span>
-        <button class="arrow" id="room-next" aria-label="Next piece">
+        <button class="arrow room__photo-arrow room__photo-arrow--next" id="photo-next" aria-label="Next photo" hidden>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
         </button>
       </div>
+      <div class="room__thumbs" id="room-thumbs" hidden></div>
+      <p class="room__count label" id="room-count" aria-live="polite"></p>
     </div>
 
     <div class="room__panel">
@@ -234,7 +234,7 @@
     </div>
   </dialog>
 
-  <script src="js/pottery.js?v=202611242120"></script>
-  <script src="js/main.js?v=202611242120"></script>
+  <script src="js/pottery.js?v=202611242131"></script>
+  <script src="js/main.js?v=202611242131"></script>
 </body>
 </html>

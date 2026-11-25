@@ -388,7 +388,12 @@
         ${[["Clay", p.clay], ["Glaze", p.glaze], ["Size", p.size], ["Made", p.year]]
           .filter(([, v]) => v).map(([k, v]) => `<dt>${k}</dt><dd>${esc(v)}</dd>`).join("")}
       </dl>
-      <div>${action}</div>`;
+      <div>${action}</div>
+      ${roomList.length > 1 ? `
+      <nav class="room__pieces" aria-label="Other pieces">
+        <button type="button" class="link" data-action="prev-piece">← Previous piece</button>
+        <button type="button" class="link" data-action="next-piece">Next piece →</button>
+      </nav>` : ""}`;
   }
 
   function buyView(p) {
@@ -476,21 +481,29 @@
   function renderRoom(direction = 0) {
     const p = current();
     roomFrame.style.setProperty("--from", reduceMotion ? "0" : `${direction * 24}px`);
-    showPhoto(0);
     const photos = photosOf(p);
+    const many = photos.length > 1;
     const thumbs = $("#room-thumbs");
-    thumbs.hidden = photos.length < 2;
-    thumbs.innerHTML = photos.length < 2 ? "" : photos.map((src, i) =>
+    thumbs.hidden = !many;
+    thumbs.innerHTML = many ? photos.map((src, i) =>
       `<button type="button" class="room__thumb" data-photo="${i}" aria-label="Photo ${i + 1} of ${photos.length}" aria-pressed="${i === 0}">
-        <img src="${esc(src)}" alt="" loading="lazy"></button>`).join("");
-    $("#room-count").textContent = `${roomIndex + 1} / ${roomList.length}`;
+        <img src="${esc(src)}" alt="" loading="lazy"></button>`).join("") : "";
+    $("#photo-prev").hidden = $("#photo-next").hidden = !many;
+    showPhoto(0);
     showView(detailsView(p));
   }
 
-  function showPhoto(i) {
-    roomFrame.innerHTML = art(current(), { eager: true, index: i, wall: "#FBF8F3", floor: "#EFE7DC" });
-    $$("#room-thumbs [data-photo]").forEach((b) => b.setAttribute("aria-pressed", String(+b.dataset.photo === i)));
+  // The arrows on the photo step through this piece's photos (wrapping around)
+  let roomPhoto = 0;
+  function showPhoto(i, direction = 0) {
+    const n = Math.max(1, photosOf(current()).length);
+    roomPhoto = ((i % n) + n) % n;
+    if (direction) roomFrame.style.setProperty("--from", reduceMotion ? "0" : `${direction * 24}px`);
+    roomFrame.innerHTML = art(current(), { eager: true, index: roomPhoto, wall: "#FBF8F3", floor: "#EFE7DC" });
+    $$("#room-thumbs [data-photo]").forEach((b) => b.setAttribute("aria-pressed", String(+b.dataset.photo === roomPhoto)));
+    $("#room-count").textContent = n > 1 ? `Photo ${roomPhoto + 1} of ${n}` : "";
   }
+  const stepPhoto = (dir) => { if (photosOf(current()).length > 1) showPhoto(roomPhoto + dir, dir); };
 
   function openRoom(no, list) {
     roomList = list && list.length ? list : PRODUCTS;
@@ -652,8 +665,8 @@
       if (btn.dataset.photo) showPhoto(+btn.dataset.photo); // open on the photo that was tapped
     });
 
-    $("#room-prev").addEventListener("click", () => step(-1));
-    $("#room-next").addEventListener("click", () => step(1));
+    $("#photo-prev").addEventListener("click", () => stepPhoto(-1));
+    $("#photo-next").addEventListener("click", () => stepPhoto(1));
     $("#room-close").addEventListener("click", closeRoom);
     room.addEventListener("cancel", (e) => { e.preventDefault(); closeRoom(); });
     room.addEventListener("click", (e) => { if (e.target === room) closeRoom(); });
@@ -665,15 +678,18 @@
       if (a.dataset.action === "buy") { showView(buyView(p)); wireBuyForm(p); $("#buy-form input").focus({ preventScroll: true }); }
       if (a.dataset.action === "details") showView(detailsView(p));
       if (a.dataset.action === "close") closeRoom();
+      if (a.dataset.action === "prev-piece") step(-1);
+      if (a.dataset.action === "next-piece") step(1);
     });
 
+    // ← → keys flip through this piece's photos
     room.addEventListener("keydown", (e) => {
       if (e.target.closest("input, textarea, select")) return;
-      if (e.key === "ArrowLeft") step(-1);
-      if (e.key === "ArrowRight") step(1);
+      if (e.key === "ArrowLeft") stepPhoto(-1);
+      if (e.key === "ArrowRight") stepPhoto(1);
     });
 
-    // Swipe between pieces on touch screens
+    // Swipe through photos on touch screens
     let x0 = null, y0 = null;
     const artEl = $("#room-art");
     artEl.addEventListener("touchstart", (e) => { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; }, { passive: true });
@@ -681,7 +697,7 @@
       if (x0 === null) return;
       const dx = e.changedTouches[0].clientX - x0;
       const dy = e.changedTouches[0].clientY - y0;
-      if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) step(dx < 0 ? 1 : -1);
+      if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) stepPhoto(dx < 0 ? 1 : -1);
       x0 = null;
     });
 
