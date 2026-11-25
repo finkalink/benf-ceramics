@@ -332,22 +332,73 @@ strong { font-weight: 600; }
 .hero__count:empty { display: none; }
 
 .hero__art { margin: 0; }
-.hero__art button {
-  display: block;
-  width: 100%;
+/* Featured piece: a swipeable strip of its photos */
+.hero__track {
+  display: flex;
+  aspect-ratio: 4 / 5;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  background: var(--paper);
+}
+.hero__track::-webkit-scrollbar { display: none; }
+.hero__slide {
+  flex: 0 0 100%;
+  height: 100%;
   padding: 0;
   border: 0;
   background: none;
-  text-align: left;
+  overflow: hidden;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
   cursor: pointer;
 }
-.hero__frame {
-  aspect-ratio: 4 / 5;
-  overflow: hidden;
-  background: var(--paper);
+.hero__slide > * { width: 100%; height: 100%; object-fit: cover; transition: transform .9s var(--ease-out); }
+.hero__slide:hover > *, .hero__slide:focus-visible > * { transform: scale(1.03); }
+.hero__slide:focus-visible { outline-offset: -4px; }
+
+.hero__nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 14px;
 }
-.hero__frame > * { width: 100%; height: 100%; object-fit: cover; transition: transform .9s var(--ease-out); }
-.hero__art button:hover .hero__frame > * { transform: scale(1.03); }
+.hero__dots { display: flex; gap: 2px; }
+.hero__dot {
+  width: 28px; height: 28px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+.hero__dot::before {
+  content: "";
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  border: 1px solid var(--cream);
+  transition: background-color .2s var(--ease), transform .2s var(--ease);
+}
+.hero__dot[aria-current="true"]::before { background: var(--cream); transform: scale(1.15); }
+.hero__arrows { display: flex; gap: 8px; }
+.hero__arrow {
+  width: 44px; height: 44px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--hairline-dark);
+  border-radius: 50%;
+  background: none;
+  color: var(--cream);
+  cursor: pointer;
+  transition: background-color .2s var(--ease), border-color .2s var(--ease), color .2s var(--ease);
+}
+.hero__arrow:hover { background: var(--cream); border-color: var(--cream); color: var(--ink); }
+.hero__arrow[disabled] { opacity: .35; pointer-events: none; }
+.hero__arrow svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
 .hero__caption {
   display: flex;
   justify-content: space-between;

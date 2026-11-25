@@ -78,17 +78,69 @@
     const p = byNo(SHOP.heroPiece) || PRODUCTS.find(isAvailable) || PRODUCTS[0];
     if (!p) { $("#hero-art").innerHTML = ""; $("#hero-count").textContent = "New work coming soon"; return; }
     const st = statusOf(p);
+    // Chosen top photo first, then the rest in their usual order
+    const photos = photosOf(p).map((src, i) => ({ src, i }));
+    const top = photos.findIndex((x) => x.src === SHOP.heroPhoto);
+    if (top > 0) photos.unshift(...photos.splice(top, 1));
+    const slides = photos.length
+      ? photos.map((x, k) => `
+          <button type="button" class="hero__slide" data-no="${esc(p.no)}" data-photo="${x.i}"
+            aria-label="View ${esc(p.name)}, photo ${k + 1} of ${photos.length}">${art(p, { eager: k === 0, index: x.i })}</button>`).join("")
+      : `<button type="button" class="hero__slide" data-no="${esc(p.no)}" aria-label="View ${esc(p.name)}">${art(p, { eager: true, wall: "#FBF8F3", floor: "#EDE4D8" })}</button>`;
+    const many = photos.length > 1;
+    const chevron = (d) => `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${d}"/></svg>`;
+
     $("#hero-art").innerHTML = `
-      <button type="button" data-no="${esc(p.no)}" aria-label="View ${esc(p.name)}">
-        <div class="hero__frame">${art(p, { eager: true, wall: "#FBF8F3", floor: "#EDE4D8" })}</div>
-        <figcaption class="hero__caption">
-          <em>${esc(p.name)}</em>
-          <span>No. ${esc(p.no)} · ${st === "available" ? money.format(p.price) : STATUS_TEXT[st]}</span>
-        </figcaption>
-      </button>`;
+      <div class="hero__track" id="hero-track" aria-roledescription="carousel" aria-label="Photos of ${esc(p.name)}">${slides}</div>
+      ${many ? `
+      <div class="hero__nav">
+        <div class="hero__dots">${photos.map((_, k) => `<button type="button" class="hero__dot" data-go="${k}" aria-label="Show photo ${k + 1}" aria-current="${k === 0}"></button>`).join("")}</div>
+        <div class="hero__arrows">
+          <button type="button" class="hero__arrow" data-step="-1" aria-label="Previous photo" disabled>${chevron("M15 5 8 12l7 7")}</button>
+          <button type="button" class="hero__arrow" data-step="1" aria-label="Next photo">${chevron("m9 5 7 7-7 7")}</button>
+        </div>
+      </div>` : ""}
+      <figcaption class="hero__caption">
+        <em>${esc(p.name)}</em>
+        <span>No. ${esc(p.no)} · ${st === "available" ? money.format(p.price) : STATUS_TEXT[st]}</span>
+      </figcaption>`;
+    if (many) wireHeroCarousel();
 
     const n = PRODUCTS.filter(isAvailable).length;
     $("#hero-count").textContent = n ? `${n} piece${n === 1 ? "" : "s"} available now` : "New work coming soon";
+  }
+
+  // Featured-piece photo strip. The track is re-rendered, so look elements up each time.
+  const heroTrack = () => $("#hero-track");
+  const heroCount = () => $$("#hero-track .hero__slide").length;
+  const heroIndex = () => { const t = heroTrack(); return t ? Math.round(t.scrollLeft / t.clientWidth) : 0; };
+  function heroGo(k) {
+    const t = heroTrack();
+    if (!t) return;
+    t.scrollTo({ left: Math.max(0, Math.min(heroCount() - 1, k)) * t.clientWidth, behavior: reduceMotion ? "auto" : "smooth" });
+  }
+  function heroSync() {
+    const k = heroIndex(), n = heroCount();
+    $$("#hero-art .hero__dot").forEach((d, i) => d.setAttribute("aria-current", String(i === k)));
+    const [prev, next] = $$("#hero-art .hero__arrow");
+    if (prev) { prev.disabled = k === 0; next.disabled = k === n - 1; }
+  }
+  function wireHeroCarousel() {
+    heroTrack().addEventListener("scroll", () => requestAnimationFrame(heroSync), { passive: true });
+  }
+  function setupHeroControls() {
+    const art = $("#hero-art");
+    art.addEventListener("click", (e) => {
+      const d = e.target.closest("[data-go]");
+      const s = e.target.closest("[data-step]");
+      if (d) heroGo(+d.dataset.go);
+      if (s) heroGo(heroIndex() + Number(s.dataset.step));
+    });
+    art.addEventListener("keydown", (e) => {
+      if (!e.target.closest("#hero-track")) return;
+      if (e.key === "ArrowRight") { e.preventDefault(); heroGo(heroIndex() + 1); }
+      if (e.key === "ArrowLeft") { e.preventDefault(); heroGo(heroIndex() - 1); }
+    });
   }
 
   /* ---------------- New from the kiln ---------------- */
@@ -531,6 +583,7 @@
       if (!btn || room.contains(btn)) return;
       const inGrid = btn.closest("#grid");
       openRoom(btn.dataset.no, inGrid ? visibleList() : PRODUCTS);
+      if (btn.dataset.photo) showPhoto(+btn.dataset.photo); // open on the photo that was tapped
     });
 
     $("#room-prev").addEventListener("click", () => step(-1));
@@ -621,6 +674,7 @@
     setupContact();
     setupCollection();
     setupRoom();
+    setupHeroControls();
     $("#room-thumbs").addEventListener("click", (e) => {
       const b = e.target.closest("[data-photo]");
       if (b) showPhoto(+b.dataset.photo);

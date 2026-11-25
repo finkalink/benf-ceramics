@@ -430,6 +430,7 @@
   let target = null;          // product being edited (null = new)
   let draft = null;           // working copy
   let draftRemoved = [];      // existing photos removed in this edit
+  let draftTop = null;        // photo shown first when this work is featured at the top
 
   function nextNo() {
     const nums = data.products.map((p) => parseInt(p.no, 10)).filter((n) => !isNaN(n));
@@ -454,6 +455,9 @@
     f.speckle.checked = !!draft.speckle;
     f.isNew.checked = p ? (data.settings.newPieces || []).includes(p.no) : true;
     f.isHero.checked = p ? data.settings.heroPiece === p.no : false;
+    draftTop = f.isHero.checked && draft.images.includes(data.settings.heroPhoto)
+      ? data.settings.heroPhoto
+      : draft.images[0] || null;
     $$(".is-touched", form).forEach((el) => el.classList.remove("is-touched"));
 
     $("#categories").innerHTML = [...new Set(data.products.map((x) => x.category).filter(Boolean))]
@@ -509,10 +513,15 @@
     const arrowL = '<svg viewBox="0 0 24 24"><path d="M15 5 8 12l7 7"/></svg>';
     const arrowR = '<svg viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></svg>';
     const cross = '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>';
+    const featured = form.elements.isHero.checked && imgs.length > 1;
+    if (!imgs.includes(draftTop)) draftTop = imgs[0] || null;
+    $("#photo-top-hint").hidden = !featured;
     $("#photos").innerHTML = imgs.map((src, i) => `
       <li class="photo" draggable="true" data-i="${i}">
         ${photoImg(src, `Photo ${i + 1}`)}
         ${i === 0 ? '<span class="photo__cover">Cover</span>' : ""}
+        ${featured ? `<button type="button" class="photo__top" data-top aria-pressed="${src === draftTop}"
+          aria-label="Show photo ${i + 1} first at the top of the homepage">${src === draftTop ? "★ Top photo" : "Use at top"}</button>` : ""}
         <div class="photo__tools">
           <button type="button" data-move="-1" aria-label="Move photo ${i + 1} earlier" ${i === 0 ? "disabled" : ""}>${arrowL}</button>
           <button type="button" data-remove class="is-remove" aria-label="Remove photo ${i + 1}">${cross}</button>
@@ -568,7 +577,13 @@
         if (!isPending(src)) draftRemoved.push(src);
         renderPhotos();
       }
+      if (e.target.closest("[data-top]")) {
+        draftTop = draft.images[i];
+        renderPhotos();
+      }
     });
+    // Show or hide the top-photo buttons as "Feature at the top" is ticked
+    form.elements.isHero.addEventListener("change", renderPhotos);
     fileInput.addEventListener("change", () => { addFiles(fileInput.files); fileInput.value = ""; });
 
     // Drag to reorder, or drop new files anywhere on the photo grid
@@ -632,7 +647,7 @@
       data.products = data.products.filter((p) => p !== target);
       const s = data.settings;
       s.newPieces = (s.newPieces || []).filter((n) => n !== target.no);
-      if (s.heroPiece === target.no) s.heroPiece = "";
+      if (s.heroPiece === target.no) { s.heroPiece = ""; s.heroPhoto = ""; }
       editor.close();
       renderList();
       toast(`Deleted No. ${esc(target.no)}. Publish to update the site.`);
@@ -670,8 +685,13 @@
       if (s.newPieces.indexOf(target.no) >= NEW_LIMIT) note = ` Only the ${NEW_LIMIT} newest show under "New from the kiln".`;
       s.newPieces = s.newPieces.slice(0, NEW_LIMIT);
     }
-    if (f.isHero.checked) s.heroPiece = target.no;
-    else if (s.heroPiece === target.no) s.heroPiece = "";
+    if (f.isHero.checked) {
+      s.heroPiece = target.no;
+      s.heroPhoto = target.images.includes(draftTop) ? draftTop : target.images[0] || "";
+    } else if (s.heroPiece === target.no) {
+      s.heroPiece = "";
+      s.heroPhoto = "";
+    }
 
     renderList();
     toast(`Saved No. ${esc(target.no)}.${note} Publish when you're ready.`, 5200);
@@ -740,6 +760,9 @@
     });
     const out = cleanData();
     out.products.forEach((p) => { p.images = p.images.map((s) => renamed.get(s) || s); });
+    if (data.settings.heroPhoto) {
+      out.settings = { ...data.settings, heroPhoto: renamed.get(data.settings.heroPhoto) || data.settings.heroPhoto };
+    }
     const stillUsed = new Set(out.products.flatMap((p) => p.images));
     const deletePaths = [...removedPaths].filter((p) => !stillUsed.has(p) && p.startsWith("images/"));
 
@@ -751,6 +774,7 @@
         if (path) previews.set(path, pending.get(s).url);
         return path || s;
       }); });
+      if (renamed.has(data.settings.heroPhoto)) data.settings.heroPhoto = renamed.get(data.settings.heroPhoto);
       renamed.forEach((_, id) => pending.delete(id));
       removedPaths.clear();
       dataSha = res.dataSha;
