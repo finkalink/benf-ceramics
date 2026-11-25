@@ -6,7 +6,10 @@
   const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
-  const money = new Intl.NumberFormat("en-US", { style: "currency", currency: SHOP.currency, maximumFractionDigits: 0 });
+  // Filled from data/products.json (edited through admin.html)
+  let SHOP = {};
+  let PRODUCTS = [];
+  let money;
   const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const byNo = (no) => PRODUCTS.find((p) => p.no === no);
 
@@ -35,9 +38,14 @@
   const isAvailable = (p) => statusOf(p) === "available";
 
   /* ---------------- Artwork ---------------- */
+  const photosOf = (p) => (Array.isArray(p.images) ? p.images : []).filter(Boolean);
+
   function art(p, opts = {}) {
-    if (p.image) {
-      return `<img src="${esc(p.image)}" alt="${esc(p.name)}, ${esc(p.glaze)} glaze" loading="${opts.eager ? "eager" : "lazy"}" decoding="async">`;
+    const photos = photosOf(p);
+    if (photos.length) {
+      const i = Math.min(opts.index || 0, photos.length - 1);
+      const n = photos.length > 1 ? ` (photo ${i + 1} of ${photos.length})` : "";
+      return `<img src="${esc(photos[i])}" alt="${esc(p.name)}, ${esc(p.glaze)} glaze${n}" loading="${opts.eager ? "eager" : "lazy"}" decoding="async">`;
     }
     return Pottery.svg(p, { ...opts, label: `${p.name}, ${p.glaze} glaze` });
   }
@@ -60,14 +68,15 @@
           <span class="wall-label__no">No. ${esc(p.no)} · ${esc(p.year)}</span>
           <span class="wall-label__name">${esc(p.name)}</span>
           <span class="wall-label__price">${unavailable ? STATUS_TEXT[st] : money.format(p.price)}</span>
-          <span class="wall-label__meta">${esc(p.clay)}, ${esc(p.glaze.toLowerCase())} glaze</span>
+          <span class="wall-label__meta">${esc(p.clay)}, ${esc(String(p.glaze || "").toLowerCase())} glaze</span>
         </div>
       </button>`;
   }
 
   /* ---------------- Hero ---------------- */
   function renderHero() {
-    const p = byNo(SHOP.heroPiece) || PRODUCTS[0];
+    const p = byNo(SHOP.heroPiece) || PRODUCTS.find(isAvailable) || PRODUCTS[0];
+    if (!p) { $("#hero-art").innerHTML = ""; $("#hero-count").textContent = "New work coming soon"; return; }
     const st = statusOf(p);
     $("#hero-art").innerHTML = `
       <button type="button" data-no="${esc(p.no)}" aria-label="View ${esc(p.name)}">
@@ -209,7 +218,7 @@
   const room = $("#room");
   const roomFrame = $("#room-frame");
   const roomContent = $("#room-content");
-  let roomList = PRODUCTS;
+  let roomList = [];
   let roomIndex = 0;
 
   function current() { return roomList[roomIndex]; }
@@ -326,9 +335,20 @@
   function renderRoom(direction = 0) {
     const p = current();
     roomFrame.style.setProperty("--from", reduceMotion ? "0" : `${direction * 24}px`);
-    roomFrame.innerHTML = art(p, { eager: true, wall: "#FBF8F3", floor: "#EFE7DC" });
+    showPhoto(0);
+    const photos = photosOf(p);
+    const thumbs = $("#room-thumbs");
+    thumbs.hidden = photos.length < 2;
+    thumbs.innerHTML = photos.length < 2 ? "" : photos.map((src, i) =>
+      `<button type="button" class="room__thumb" data-photo="${i}" aria-label="Photo ${i + 1} of ${photos.length}" aria-pressed="${i === 0}">
+        <img src="${esc(src)}" alt="" loading="lazy"></button>`).join("");
     $("#room-count").textContent = `${roomIndex + 1} / ${roomList.length}`;
     showView(detailsView(p));
+  }
+
+  function showPhoto(i) {
+    roomFrame.innerHTML = art(current(), { eager: true, index: i, wall: "#FBF8F3", floor: "#EFE7DC" });
+    $$("#room-thumbs [data-photo]").forEach((b) => b.setAttribute("aria-pressed", String(+b.dataset.photo === i)));
   }
 
   function openRoom(no, list) {
@@ -523,11 +543,31 @@
   }
 
   /* ---------------- Go ---------------- */
-  renderAll();
-  setupContact();
-  setupNav();
-  setupMenu();
-  setupCollection();
-  setupRoom();
-  observeReveals();
+  async function boot() {
+    setupNav();
+    setupMenu();
+    observeReveals();
+    try {
+      const res = await fetch("data/products.json", { cache: "no-cache" });
+      if (!res.ok) throw new Error(res.status);
+      const data = await res.json();
+      SHOP = data.settings || {};
+      PRODUCTS = data.products || [];
+    } catch (e) {
+      $("#grid-empty").hidden = false;
+      $("#grid-empty").textContent = "The collection couldn't load. Please refresh the page.";
+      return;
+    }
+    money = new Intl.NumberFormat("en-US", { style: "currency", currency: SHOP.currency || "USD", maximumFractionDigits: 0 });
+    renderAll();
+    setupContact();
+    setupCollection();
+    setupRoom();
+    $("#room-thumbs").addEventListener("click", (e) => {
+      const b = e.target.closest("[data-photo]");
+      if (b) showPhoto(+b.dataset.photo);
+    });
+    observeReveals();
+  }
+  boot();
 })();

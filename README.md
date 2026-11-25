@@ -4,46 +4,54 @@ Live site: https://finkalink.github.io/benf-ceramics/
 
 A static site (plain HTML, CSS and JavaScript) hosted on GitHub Pages. Design decisions are in [design.md](design.md).
 
-## Everyday edits: `js/products.js`
+## Adding and editing works: the Studio page
 
-Everything you'll change regularly is in this one file:
+Open the site, scroll to the footer and tap the **©** symbol (or go to `/admin.html`). Enter the PIN.
 
-- **Shop settings** at the top: email, Venmo handle, which piece appears at the top of the page (`heroPiece`), and which pieces are under "New from the kiln" (`newPieces`).
-- **Pieces**: one `{ ... }` block per piece.
+- **Add a work**: add photos (several per piece; the first is the cover), name, price, type, status and details.
+- **Edit**: tap any work. Reorder photos with the arrows or by dragging, and remove one with ×.
+- **Status**: change Available / On hold / Sold right from the list.
+- **Delete**: open a work → *Delete this work*.
+- **Publish**: changes stay on the page until you tap **Publish**. Everything goes to the site in one step and is live in about a minute.
 
-### Add a piece
-1. Put a photo in `images/`, e.g. `images/044-blue-mug.jpg`. A portrait (4:5) photo against a plain wall works best.
-2. Copy an existing block, give it a new `no`, and set `image: "images/044-blue-mug.jpg"`.
-3. Commit and push. The site updates in about a minute.
+Photos are resized on your device (max 1800px, JPEG) before upload, so full-size phone photos are fine.
+
+### One-time setup per device
+The Studio page saves by committing to this GitHub repository, so each device needs a GitHub
+fine-grained access token (the page walks you through it):
+repository access **benf-ceramics** only, permission **Contents: Read and write** (optional: **Pages: Read-only**).
+The token is stored only in that browser. *Practice mode* lets you try everything without saving.
+
+**About the PIN:** it keeps visitors out of the Studio screen. This is a public static site, so
+the PIN alone can't stop a determined person who reads the page's code. The real lock is the
+GitHub token, which lives only on your devices. Without it, nothing on the site can be changed.
 
 ### When someone reserves or buys
-The buyer pays you on Venmo (@finkalink) and fills in the short form, which emails you a notice with
-**RESERVED** or **PURCHASED** in the subject line. Then:
-- Reserved → set that piece's `status: "reserved"` (shows "On hold" to everyone)
-- Purchased → set `status: "sold"`
-- A hold that falls through → set it back to `"available"`
-
-Until you change the status, only the buyer's own browser shows the piece as theirs.
+You get an email with **RESERVED** or **PURCHASED** in the subject. Open the Studio page, set that work
+to *On hold* or *Sold*, and publish.
 
 ### One-time setup: email notifications
 Notices are sent through [FormSubmit](https://formsubmit.co) (free, no account needed).
-The **first** time the form is used, FormSubmit sends an "Activate form" email to your Gmail.
+The **first** time the buy form is used, FormSubmit sends an "Activate form" email to your Gmail.
 Click the link in it once. Until you do, buyers see a fallback "Email it to me instead" link.
 
 ## Files
 | Path | What it is |
 |---|---|
 | `index.html` | The page structure: sections, nav and the piece viewer |
-| `css/styles.css` | All styles. Colors and fonts are at the top |
-| `js/products.js` | **Your inventory and shop settings** |
+| `css/styles.css` | All site styles. Colors and fonts are at the top |
+| `data/products.json` | Inventory and shop settings (edited by the Studio page) |
+| `admin.html`, `js/admin.js`, `css/admin.css` | The PIN-locked Studio page |
+| `js/github.js` | Saves Studio changes to GitHub as one commit |
 | `js/pottery.js` | Drawn pottery placeholders, used until a piece has a photo |
 | `js/main.js` | Grid, filters, piece viewer, buy form, animations |
 | `assets/brand/` | BEN F logos and favicons from the marketing set |
-| `images/` | Your product photos |
+| `images/` | Product photos (uploaded by the Studio page) |
 | `design.md` | Palette, fonts, section order and motion rules |
 
 ## Preview on your computer
-Double-click `index.html`, or run a local server:
+The site loads its works with a web request, so open it through a local server
+(double-clicking `index.html` won't load the works):
 ```
 npx http-server -p 5173 -c-1
 ```

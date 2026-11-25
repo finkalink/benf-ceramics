@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Studio · BEN F</title>
+  <meta name="theme-color" content="#3A2F28">
+  <link rel="icon" href="assets/brand/favicon.ico" sizes="any">
+  <link rel="apple-touch-icon" href="assets/brand/favicon_180.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Instrument+Serif&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body class="admin">
+
+  <!-- ============ 1. PIN LOCK ============ -->
+  <section class="lock room--dark" id="screen-lock" hidden>
+    <div class="lock__inner">
+      <span class="monogram lock__mark" aria-hidden="true"></span>
+      <h1 class="lock__title">Studio</h1>
+      <p class="label lock__hint" id="pin-hint">Enter your PIN</p>
+      <div class="pin-dots" id="pin-dots" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+      <label class="sr-only" for="pin-input">PIN</label>
+      <input id="pin-input" class="sr-only" inputmode="numeric" autocomplete="off" maxlength="4">
+      <div class="keypad" id="keypad">
+        <button type="button" data-key="1">1</button><button type="button" data-key="2">2</button><button type="button" data-key="3">3</button>
+        <button type="button" data-key="4">4</button><button type="button" data-key="5">5</button><button type="button" data-key="6">6</button>
+        <button type="button" data-key="7">7</button><button type="button" data-key="8">8</button><button type="button" data-key="9">9</button>
+        <a href="./" class="keypad__text">Site</a><button type="button" data-key="0">0</button>
+        <button type="button" data-key="del" aria-label="Delete digit" class="keypad__text">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5h11v14H9l-6-7zM12 9l6 6M18 9l-6 6"/></svg>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 2. CONNECT TO GITHUB ============ -->
+  <section class="connect" id="screen-connect" hidden>
+    <div class="connect__inner">
+      <span class="monogram" aria-hidden="true"></span>
+      <p class="label label--accent">One-time setup on this device</p>
+      <h1 class="title">Connect to GitHub</h1>
+      <p>Your site lives on GitHub, so saving changes needs a GitHub access key. You make it once per device. It's stored only in this browser.</p>
+
+      <ol class="connect__steps">
+        <li>Open <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">GitHub → New fine-grained token</a> (sign in as <strong>finkalink</strong>).</li>
+        <li>Name it <em>BEN F studio</em> and pick an expiration (1 year is fine).</li>
+        <li>Under <strong>Repository access</strong> choose <em>Only select repositories</em> → <strong>benf-ceramics</strong>.</li>
+        <li>Under <strong>Permissions → Repository permissions</strong> set <strong>Contents</strong> to <em>Read and write</em>. Optional: <strong>Pages</strong> → <em>Read-only</em> (shows when the site is live).</li>
+        <li>Click <strong>Generate token</strong>, copy it, and paste it below.</li>
+      </ol>
+
+      <form class="form" id="connect-form">
+        <div class="field">
+          <label for="token">Access token</label>
+          <input id="token" type="password" autocomplete="off" spellcheck="false" placeholder="github_pat_…" required>
+        </div>
+        <p class="form__error" id="connect-error" role="alert" hidden></p>
+        <button class="btn btn--block" type="submit" id="connect-btn">Connect</button>
+      </form>
+      <p class="connect__alt"><button type="button" class="link" id="demo-btn">Try it first in practice mode</button> (nothing is saved)</p>
+    </div>
+  </section>
+
+  <!-- ============ 3. THE STUDIO ADMIN ============ -->
+  <div class="app" id="screen-app" hidden>
+    <header class="bar">
+      <div class="bar__inner">
+        <a href="./" class="bar__brand" target="_blank" rel="noopener" aria-label="Open the site in a new tab">
+          <span class="monogram" aria-hidden="true"></span>
+          <span>Studio</span>
+        </a>
+        <p class="bar__state" id="state" aria-live="polite"></p>
+        <div class="bar__actions">
+          <button type="button" class="btn btn--sm" id="publish-btn" disabled>Publish</button>
+          <details class="menu-pop">
+            <summary aria-label="More">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>
+            </summary>
+            <div class="menu-pop__list">
+              <a href="./" target="_blank" rel="noopener">View the site ↗</a>
+              <button type="button" id="settings-btn">Shop settings</button>
+              <button type="button" id="discard-btn">Discard unpublished changes</button>
+              <button type="button" id="disconnect-btn">Disconnect this device</button>
+              <button type="button" id="lock-btn">Lock</button>
+            </div>
+          </details>
+        </div>
+      </div>
+      <div class="demo-banner" id="demo-banner" hidden>Practice mode: changes are not saved to the site.</div>
+    </header>
+
+    <main class="wrap admin-main">
+      <div class="admin-head">
+        <div>
+          <p class="label label--accent">Works for sale</p>
+          <h1 class="title" id="works-title">Works</h1>
+        </div>
+        <button type="button" class="btn" id="add-btn">
+          <svg viewBox="0 0 24 24" aria-hidden="true" class="ico"><path d="M12 5v14M5 12h14"/></svg>
+          Add a work
+        </button>
+      </div>
+
+      <div class="admin-tools">
+        <label class="search">
+          <svg viewBox="0 0 24 24" aria-hidden="true" class="ico"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.5-4.5"/></svg>
+          <span class="sr-only">Search works</span>
+          <input type="search" id="search" placeholder="Search by name or number">
+        </label>
+        <div class="seg" role="group" aria-label="Show">
+          <button type="button" data-show="all" aria-pressed="true">All</button>
+          <button type="button" data-show="available" aria-pressed="false">Available</button>
+          <button type="button" data-show="reserved" aria-pressed="false">On hold</button>
+          <button type="button" data-show="sold" aria-pressed="false">Sold</button>
+        </div>
+      </div>
+
+      <ul class="works" id="works"></ul>
+      <p class="works__empty" id="works-empty" hidden>No works match.</p>
+    </main>
+  </div>
+
+  <!-- ============ EDITOR ============ -->
+  <dialog class="sheet" id="editor" aria-labelledby="editor-title">
+    <form class="sheet__form" id="editor-form" novalidate>
+      <header class="sheet__head">
+        <button type="button" class="link" data-close>Cancel</button>
+        <h2 id="editor-title">Edit work</h2>
+        <button type="submit" class="btn btn--sm">Done</button>
+      </header>
+
+      <div class="sheet__body">
+        <!-- Photos -->
+        <section class="group">
+          <div class="group__head">
+            <h3>Photos</h3>
+            <span class="group__hint">First photo is the cover. Drag to reorder or use the arrows.</span>
+          </div>
+          <ul class="photos" id="photos"></ul>
+          <p class="group__hint" id="photo-status" aria-live="polite"></p>
+        </section>
+
+        <!-- Basics -->
+        <section class="group">
+          <h3>Basics</h3>
+          <div class="fields fields--2">
+            <div class="field"><label for="e-name">Name</label><input id="e-name" name="name" required></div>
+            <div class="field"><label for="e-no">Catalog no.</label><input id="e-no" name="no" required inputmode="numeric"></div>
+            <div class="field"><label for="e-price">Price ($)</label><input id="e-price" name="price" type="number" min="0" step="1" required inputmode="numeric"></div>
+            <div class="field"><label for="e-category">Type</label><input id="e-category" name="category" list="categories" required placeholder="Mugs, Bowls…"></div>
+            <div class="field"><label for="e-year">Year made</label><input id="e-year" name="year" type="number" min="1990" max="2100" inputmode="numeric"></div>
+          </div>
+          <fieldset class="seg-field">
+            <legend>Status</legend>
+            <div class="seg seg--radios">
+              <label><input type="radio" name="status" value="available"><span>Available</span></label>
+              <label><input type="radio" name="status" value="reserved"><span>On hold</span></label>
+              <label><input type="radio" name="status" value="sold"><span>Sold</span></label>
+            </div>
+          </fieldset>
+          <datalist id="categories"></datalist>
+        </section>
+
+        <!-- Details -->
+        <section class="group">
+          <h3>Details</h3>
+          <div class="fields fields--2">
+            <div class="field"><label for="e-clay">Clay</label><input id="e-clay" name="clay" placeholder="Stoneware"></div>
+            <div class="field"><label for="e-glaze">Glaze</label><input id="e-glaze" name="glaze" placeholder="Celadon"></div>
+            <div class="field fields__full"><label for="e-size">Size</label><input id="e-size" name="size" placeholder="4 in tall · holds 12 oz"></div>
+            <div class="field fields__full"><label for="e-desc">Description <span class="field__opt">(1–2 short sentences)</span></label><textarea id="e-desc" name="description" rows="3"></textarea></div>
+          </div>
+        </section>
+
+        <!-- Placement -->
+        <section class="group">
+          <h3>On the homepage</h3>
+          <label class="check"><input type="checkbox" name="isNew"><span><strong>New from the kiln</strong><small>Shown in the "New from the kiln" row, newest number first (up to 3)</small></span></label>
+          <label class="check"><input type="checkbox" name="isHero"><span><strong>Feature at the top</strong><small>The large piece beside the headline. Only one at a time.</small></span></label>
+        </section>
+
+        <!-- Placeholder drawing -->
+        <details class="group group--details" id="drawing">
+          <summary><h3>Drawing (used when there are no photos)</h3></summary>
+          <div class="drawing">
+            <div class="drawing__preview" id="drawing-preview"></div>
+            <div class="fields">
+              <div class="field"><label for="e-shape">Shape</label>
+                <select id="e-shape" name="shape">
+                  <option value="mug">Mug</option><option value="bowl">Bowl</option><option value="vase">Vase</option>
+                  <option value="cup">Cup</option><option value="jar">Jar</option><option value="plate">Plate</option><option value="planter">Planter</option>
+                </select></div>
+              <div class="fields fields--2">
+                <div class="field"><label for="e-glazeColor">Glaze color</label><input id="e-glazeColor" name="glazeColor" type="color"></div>
+                <div class="field"><label for="e-clayColor">Clay color</label><input id="e-clayColor" name="clayColor" type="color"></div>
+              </div>
+              <label class="check check--plain"><input type="checkbox" name="speckle"><span>Speckled</span></label>
+            </div>
+          </div>
+        </details>
+
+        <p class="form__error" id="editor-error" role="alert" hidden></p>
+
+        <div class="sheet__danger" id="delete-wrap">
+          <button type="button" class="btn btn--danger" id="delete-btn">Delete this work</button>
+        </div>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- ============ SHOP SETTINGS ============ -->
+  <dialog class="sheet sheet--small" id="settings" aria-labelledby="settings-title">
+    <form class="sheet__form" id="settings-form" novalidate>
+      <header class="sheet__head">
+        <button type="button" class="link" data-close>Cancel</button>
+        <h2 id="settings-title">Shop settings</h2>
+        <button type="submit" class="btn btn--sm">Done</button>
+      </header>
+      <div class="sheet__body">
+        <section class="group">
+          <div class="fields">
+            <div class="field"><label for="s-email">Email for orders &amp; questions</label><input id="s-email" name="email" type="email" required></div>
+            <div class="field"><label for="s-venmo">Venmo handle (without @)</label><input id="s-venmo" name="venmo" required></div>
+          </div>
+        </section>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- ============ CONFIRM ============ -->
+  <dialog class="confirm" id="confirm" aria-labelledby="confirm-title">
+    <h2 id="confirm-title"></h2>
+    <p id="confirm-body"></p>
+    <div class="confirm__actions">
+      <button type="button" class="btn btn--ghost" value="cancel" id="confirm-no">Cancel</button>
+      <button type="button" class="btn btn--danger" value="ok" id="confirm-yes">Delete</button>
+    </div>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+  <input type="file" id="file-input" accept="image/*" multiple hidden>
+
+  <script src="js/pottery.js"></script>
+  <script src="js/github.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>

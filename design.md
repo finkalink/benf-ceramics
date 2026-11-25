@@ -105,3 +105,11 @@ Pickup is free. Shipping is quoted per order and paid separately.
 - Logos: `assets/brand/` (single-color SVGs from the marketing set, tinted through CSS masks)
 - Favicons: from the marketing set (`favicon.ico`, 32px, 180px)
 - Product photos: `images/`. Until there are real photos, pieces use generated pottery placeholders drawn in each piece's glaze color.
+
+## 10. Studio admin (`admin.html`)
+
+- Reached from the **©** in the footer. It isn't listed in the nav and has `noindex`.
+- **PIN screen:** a Kiln-colored keypad that matches the dark rooms. Five wrong tries lock it for 30 seconds.
+- **Works list:** thumbnails, wall-label style names and an inline status picker. Rows with unpublished changes get a Clay edge marker.
+- **Editor:** a side sheet on desktop, full-screen on phones. Photos come first (cover = first; arrows or drag to reorder), then basics, details, homepage placement, and a placeholder drawing preview.
+- **Publish model:** edits stay on the page until **Publish**, which sends everything to GitHub as one commit. The bar shows the count of unpublished changes.
