@@ -72,14 +72,7 @@
         "images/003-moss-iron-bowl-1.jpg",
         "images/003-moss-iron-bowl-2.jpg",
         "images/003-moss-iron-bowl-3.jpg"
-      ],
-      "crops": {
-        "images/003-moss-iron-bowl-1.jpg": {
-          "s": 2.002,
-          "x": 50,
-          "y": 57.3
-        }
-      }
+      ]
     },
     {
       "no": "007",
