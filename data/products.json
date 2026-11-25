@@ -8,18 +8,7 @@
     "venmo": "finkalink",
     "web3formsKey": "efb5b9bf-cf5e-41b4-8439-ba868de5b839",
     "heroPhoto": "images/007-speckled-rust-bowl-1.jpg",
-    "heroCrops": {
-      "images/007-speckled-rust-bowl-1.jpg": {
-        "s": 1.575,
-        "x": 53.7,
-        "y": 50
-      },
-      "images/007-speckled-rust-bowl-3.jpg": {
-        "s": 1.555,
-        "x": 47.8,
-        "y": 50.2
-      }
-    }
+    "heroAspect": "4/3"
   },
   "products": [
     {
