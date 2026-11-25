@@ -11,8 +11,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Instrument+Serif&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=202611242023">
-  <link rel="stylesheet" href="css/admin.css?v=202611242023">
+  <link rel="stylesheet" href="css/styles.css?v=202611242050">
+  <link rel="stylesheet" href="css/admin.css?v=202611242050">
 </head>
 <body class="admin">
 
@@ -260,7 +260,12 @@
   <!-- ============ HOMEPAGE CROP ============ -->
   <dialog class="confirm cropper" id="cropper" aria-labelledby="crop-title">
     <h2 id="crop-title">Crop for the homepage</h2>
-    <p>Drag the photo to move it. Use the slider to zoom.</p>
+    <p>Pick a frame shape, then drag to move and use the slider to zoom. What's inside the frame is exactly what the homepage shows.</p>
+    <div class="seg crop__shapes" id="crop-shapes" role="group" aria-label="Frame shape">
+      <button type="button" data-shape="tall" aria-pressed="true">Tall</button>
+      <button type="button" data-shape="square" aria-pressed="false">Square</button>
+      <button type="button" data-shape="wide" aria-pressed="false">Wide</button>
+    </div>
     <div class="crop__frame" id="crop-frame" tabindex="0" aria-label="Crop preview. Drag, or use the arrow keys, to move the photo.">
       <img id="crop-img" class="is-cropped" alt="" draggable="false">
     </div>
@@ -270,9 +275,9 @@
       <span aria-hidden="true">+</span>
     </div>
     <div class="crop__presets">
-      <button type="button" class="link" id="crop-fit">Whole piece</button>
-      <button type="button" class="link" id="crop-fill">Fill frame</button>
+      <button type="button" class="link" id="crop-reset">Reset</button>
     </div>
+    <p class="crop__note">The shape applies to all of this work's homepage photos. Changing it resets their crops to centered.</p>
     <div class="confirm__actions">
       <button type="button" class="btn btn--ghost" id="crop-cancel">Cancel</button>
       <button type="button" class="btn" id="crop-save">Use this crop</button>
@@ -293,8 +298,8 @@
 
   <input type="file" id="file-input" accept="image/*" multiple hidden>
 
-  <script src="js/pottery.js?v=202611242023"></script>
-  <script src="js/github.js?v=202611242023"></script>
-  <script src="js/admin.js?v=202611242023"></script>
+  <script src="js/pottery.js?v=202611242050"></script>
+  <script src="js/github.js?v=202611242050"></script>
+  <script src="js/admin.js?v=202611242050"></script>
 </body>
 </html>

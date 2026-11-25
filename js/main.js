@@ -91,7 +91,7 @@
     const chevron = (d) => `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${d}"/></svg>`;
 
     $("#hero-art").innerHTML = `
-      <div class="hero__track" id="hero-track" aria-roledescription="carousel" aria-label="Photos of ${esc(p.name)}">${slides}</div>
+      <div class="hero__track" id="hero-track" style="aspect-ratio:${heroAspect().replace("/", " / ")}" aria-roledescription="carousel" aria-label="Photos of ${esc(p.name)}">${slides}</div>
       ${many ? `
       <div class="hero__nav">
         <div class="hero__dots">${photos.map((_, k) => `<button type="button" class="hero__dot" data-go="${k}" aria-label="Show photo ${k + 1}" aria-current="${k === 0}"></button>`).join("")}</div>
@@ -105,6 +105,11 @@
         <span>No. ${esc(p.no)} · ${st === "available" ? money.format(p.price) : STATUS_TEXT[st]}</span>
       </figcaption>`;
     if (many) wireHeroCarousel();
+    // Keep each cropped photo covering its frame once its real size is known (no white space)
+    $$("#hero-track img.is-cropped").forEach((img) => {
+      if (img.complete && img.naturalWidth) clampHeroImg(img);
+      else img.addEventListener("load", () => clampHeroImg(img), { once: true });
+    });
 
     const n = PRODUCTS.filter(isAvailable).length;
     $("#hero-count").textContent = n ? `${n} piece${n === 1 ? "" : "s"} available now` : "New work coming soon";
@@ -112,6 +117,20 @@
 
   /* Featured photo with the crop chosen in the Studio page.
      crop = { s: width as a multiple of the frame width, x/y: the image point (in %) at the frame's center } */
+  // Frame shape chosen in the Studio page (width/height); tall 4:5 by default
+  const heroAspect = () => (/^\d+\/\d+$/.test(SHOP.heroAspect || "") ? SHOP.heroAspect : "4/5");
+
+  function clampHeroImg(img) {
+    const [w, h] = heroAspect().split("/").map(Number);
+    const F = w / h, A = img.naturalWidth / img.naturalHeight;
+    const st = img.style;
+    const s = Math.max(1, A / F, parseFloat(st.getPropertyValue("--s")) || 1);
+    const halfX = 50 / s, halfY = (50 * A) / (s * F);
+    const x = Math.min(100 - halfX, Math.max(halfX, parseFloat(st.getPropertyValue("--x")) || 50));
+    const y = Math.min(100 - halfY, Math.max(halfY, parseFloat(st.getPropertyValue("--y")) || 50));
+    st.setProperty("--s", s); st.setProperty("--x", x); st.setProperty("--y", y);
+  }
+
   function heroImg(p, x, k) {
     const crop = (SHOP.heroCrops || {})[x.src];
     if (!crop) return art(p, { eager: k === 0, index: x.i });

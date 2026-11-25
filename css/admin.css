@@ -535,3 +535,7 @@ body.admin { background: var(--cream); min-height: 100dvh; }
 .crop__zoom input { flex: 1; accent-color: var(--ink); height: 32px; }
 .crop__presets { display: flex; justify-content: center; gap: 28px; margin-top: 6px; }
 .crop__presets .link { font-size: .7rem; }
+.crop__shapes { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; margin-bottom: 14px; }
+.crop__shapes button { width: 100%; }
+
+.crop__note { margin: 8px 0 0; font-size: .82rem; color: var(--stone-deep); text-align: center; }

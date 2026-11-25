@@ -585,6 +585,7 @@
       ? data.settings.heroPhoto
       : draft.images[0] || null;
     draftCrops = {};
+    draftAspect = (f.isHero.checked && data.settings.heroAspect) || SHAPES.tall;
     if (f.isHero.checked) {
       Object.entries(data.settings.heroCrops || {}).forEach(([src, c]) => { if (draft.images.includes(src)) draftCrops[src] = { ...c }; });
     }
@@ -678,15 +679,35 @@
 
   /* ---------- Homepage crop (featured work) ----------
      Frame is 4:5 like the homepage. Crop = { s: image width ÷ frame width, x/y: image point (%) at the frame center } */
-  const FRAME_ASPECT = 4 / 5;
-  const crop = { src: null, s: 1, x: 50, y: 50, aspect: 1, min: 1, cover: 1 };
+  // Homepage frame shapes (width / height). The photo always covers the frame: no white space.
+  const SHAPES = { tall: "4/5", square: "1/1", wide: "4/3" };
+  const ratio = (a) => { const [w, h] = String(a || "4/5").split("/").map(Number); return w && h ? w / h : 0.8; };
+  let draftAspect = SHAPES.tall;
+  const crop = { src: null, s: 1, x: 50, y: 50, aspect: 4 / 3, cover: 1 };
+
+  // Keep the photo covering the frame: zoom at least "fill", and no panning past an edge
+  function clampCrop() {
+    const F = ratio(draftAspect), A = crop.aspect;
+    crop.cover = Math.max(1, A / F);
+    crop.s = Math.max(crop.cover, crop.s);
+    const halfX = 50 / crop.s;                 // half the visible width, in % of the image
+    const halfY = (50 * A) / (crop.s * F);     // half the visible height, in % of the image
+    crop.x = Math.min(100 - halfX, Math.max(halfX, crop.x));
+    crop.y = Math.min(100 - halfY, Math.max(halfY, crop.y));
+  }
 
   function paintCrop() {
+    clampCrop();
     const img = $("#crop-img");
+    $("#crop-frame").style.aspectRatio = draftAspect.replace("/", " / ");
     img.style.setProperty("--s", crop.s);
     img.style.setProperty("--x", crop.x);
     img.style.setProperty("--y", crop.y);
-    $("#crop-zoom").value = crop.s;
+    const zoom = $("#crop-zoom");
+    zoom.min = crop.cover.toFixed(3);
+    zoom.max = (crop.cover * 3).toFixed(3);
+    zoom.value = crop.s;
+    $$("#crop-shapes [data-shape]").forEach((b) => b.setAttribute("aria-pressed", String(SHAPES[b.dataset.shape] === draftAspect)));
   }
 
   function openCrop(src) {
@@ -694,13 +715,8 @@
     const start = () => {
       crop.src = src;
       crop.aspect = img.naturalWidth / img.naturalHeight || 4 / 3;
-      crop.min = Math.min(1, crop.aspect / FRAME_ASPECT);    // whole photo visible
-      crop.cover = Math.max(1, crop.aspect / FRAME_ASPECT);  // photo fills the frame (the old default)
       const saved = draftCrops[src];
-      Object.assign(crop, saved ? { s: saved.s, x: saved.x, y: saved.y } : { s: crop.cover, x: 50, y: 50 });
-      const zoom = $("#crop-zoom");
-      zoom.min = crop.min.toFixed(3);
-      zoom.max = (crop.cover * 2.5).toFixed(3);
+      Object.assign(crop, saved ? { s: saved.s, x: saved.x, y: saved.y } : { s: 0, x: 50, y: 50 }); // s: 0 → clamps to "fill"
       paintCrop();
     };
     img.onload = start;
@@ -740,8 +756,19 @@
       paintCrop();
     });
     $("#crop-zoom").addEventListener("input", (e) => { crop.s = Number(e.target.value); paintCrop(); });
-    $("#crop-fit").addEventListener("click", () => { Object.assign(crop, { s: crop.min, x: 50, y: 50 }); paintCrop(); });
-    $("#crop-fill").addEventListener("click", () => { Object.assign(crop, { s: crop.cover, x: 50, y: 50 }); paintCrop(); });
+    $("#crop-shapes").addEventListener("click", (e) => {
+      const b = e.target.closest("[data-shape]");
+      if (!b) return;
+      if (SHAPES[b.dataset.shape] !== draftAspect) {
+        // Crops made for the old shape don't fit the new one: start the others fresh (filled, centered)
+        Object.keys(draftCrops).forEach((src) => { if (src !== crop.src) delete draftCrops[src]; });
+      }
+      draftAspect = SHAPES[b.dataset.shape];  // one shape for all of this work's homepage photos
+      crop.s = 0;                              // start the new shape filled and centered
+      crop.x = 50; crop.y = 50;
+      paintCrop();
+    });
+    $("#crop-reset").addEventListener("click", () => { Object.assign(crop, { s: 0, x: 50, y: 50 }); paintCrop(); });
     $("#crop-cancel").addEventListener("click", () => $("#cropper").close());
     $("#crop-save").addEventListener("click", () => {
       const r = (v, d) => Math.round(v * 10 ** d) / 10 ** d;
@@ -872,7 +899,7 @@
       data.products = data.products.filter((p) => p !== target);
       const s = data.settings;
       s.newPieces = (s.newPieces || []).filter((n) => n !== target.no);
-      if (s.heroPiece === target.no) { s.heroPiece = ""; s.heroPhoto = ""; delete s.heroCrops; }
+      if (s.heroPiece === target.no) { s.heroPiece = ""; s.heroPhoto = ""; delete s.heroCrops; delete s.heroAspect; }
       delete records[target.no];
       editor.close();
       renderList();
@@ -925,10 +952,12 @@
       const crops = {};
       target.images.forEach((src) => { if (draftCrops[src]) crops[src] = draftCrops[src]; });
       if (Object.keys(crops).length) s.heroCrops = crops; else delete s.heroCrops;
+      if (draftAspect !== SHAPES.tall) s.heroAspect = draftAspect; else delete s.heroAspect;
     } else if (s.heroPiece === target.no) {
       s.heroPiece = "";
       s.heroPhoto = "";
       delete s.heroCrops;
+      delete s.heroAspect;
     }
 
     renderList();
