@@ -11,8 +11,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Instrument+Serif&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=202611242050">
-  <link rel="stylesheet" href="css/admin.css?v=202611242050">
+  <link rel="stylesheet" href="css/styles.css?v=202611242120">
+  <link rel="stylesheet" href="css/admin.css?v=202611242120">
 </head>
 <body class="admin">
 
@@ -139,7 +139,7 @@
         <section class="group">
           <div class="group__head">
             <h3>Photos</h3>
-            <span class="group__hint">First photo is the cover. Drag to reorder or use the arrows.</span>
+            <span class="group__hint">First photo is the cover (tap <strong>Crop card</strong> to frame it). Drag to reorder or use the arrows.</span>
           </div>
           <p class="group__hint photo-top-hint" id="photo-top-hint" hidden>This work is featured at the top of the homepage. Tap <strong>Use at top</strong> on the photo visitors should see first (they can swipe to the rest), and <strong>Crop</strong> to choose how each photo is framed there.</p>
           <ul class="photos" id="photos"></ul>
@@ -260,7 +260,7 @@
   <!-- ============ HOMEPAGE CROP ============ -->
   <dialog class="confirm cropper" id="cropper" aria-labelledby="crop-title">
     <h2 id="crop-title">Crop for the homepage</h2>
-    <p>Pick a frame shape, then drag to move and use the slider to zoom. What's inside the frame is exactly what the homepage shows.</p>
+    <p id="crop-intro">Pick a frame shape, then drag to move and use the slider to zoom. What's inside the frame is exactly what the homepage shows.</p>
     <div class="seg crop__shapes" id="crop-shapes" role="group" aria-label="Frame shape">
       <button type="button" data-shape="tall" aria-pressed="true">Tall</button>
       <button type="button" data-shape="square" aria-pressed="false">Square</button>
@@ -277,7 +277,7 @@
     <div class="crop__presets">
       <button type="button" class="link" id="crop-reset">Reset</button>
     </div>
-    <p class="crop__note">The shape applies to all of this work's homepage photos. Changing it resets their crops to centered.</p>
+    <p class="crop__note" id="crop-shape-note">The shape applies to all of this work's homepage photos. Changing it resets their crops to centered.</p>
     <div class="confirm__actions">
       <button type="button" class="btn btn--ghost" id="crop-cancel">Cancel</button>
       <button type="button" class="btn" id="crop-save">Use this crop</button>
@@ -298,8 +298,8 @@
 
   <input type="file" id="file-input" accept="image/*" multiple hidden>
 
-  <script src="js/pottery.js?v=202611242050"></script>
-  <script src="js/github.js?v=202611242050"></script>
-  <script src="js/admin.js?v=202611242050"></script>
+  <script src="js/pottery.js?v=202611242120"></script>
+  <script src="js/github.js?v=202611242120"></script>
+  <script src="js/admin.js?v=202611242120"></script>
 </body>
 </html>

@@ -10,6 +10,8 @@ Open the site, scroll to the footer and tap the **©** symbol (or go to `/admin.
 
 - **Add a work**: add photos (several per piece; the first is the cover), name, price, type, status and details.
 - **Edit**: tap any work. Reorder photos with the arrows or by dragging, and remove one with ×.
+- **Crop card**: on the cover photo, frame how the piece looks on its gallery card. Untouched = centered automatically.
+- **Featured at the top**: pick the top photo, a frame shape (Tall / Square / Wide), and a crop for each photo.
 - **Status**: change Available / On hold / Sold right from the list.
 - **Delete**: open a work → *Delete this work*.
 - **Publish**: changes stay on the page until you tap **Publish**. Everything goes to the site in one step and is live in about a minute.

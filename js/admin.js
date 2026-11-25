@@ -122,6 +122,8 @@
       speckle: !!p.speckle,
       images: Array.isArray(p.images) ? p.images.filter(Boolean) : (p.image ? [p.image] : []),
       hidden: !!p.hidden,
+      // Card crop per photo (only the cover's is used): { src: { s, x, y } } made in a 4:5 frame
+      crops: p.crops && typeof p.crops === "object" ? { ...p.crops } : {},
     };
   }
 
@@ -336,7 +338,13 @@
     return {
       settings: data.settings,
       // keep the public file tidy: only write "hidden" when it's on
-      products: data.products.map(({ hidden, ...p }) => (hidden ? { ...p, hidden: true } : p)),
+      products: data.products.map(({ hidden, crops, ...p }) => {
+        const out = { ...p };
+        const used = Object.fromEntries(Object.entries(crops || {}).filter(([src]) => p.images.includes(src)));
+        if (Object.keys(used).length) out.crops = used;
+        if (hidden) out.hidden = true;
+        return out;
+      }),
     };
   }
 
@@ -662,7 +670,9 @@
         ${featured ? `<button type="button" class="photo__top" data-top aria-pressed="${src === draftTop}"
           aria-label="Show photo ${i + 1} first at the top of the homepage">${src === draftTop ? "★ Top photo" : "Use at top"}</button>
           <button type="button" class="photo__crop${draftCrops[src] ? " is-set" : ""}" data-crop
-            aria-label="Adjust how photo ${i + 1} is cropped on the homepage">${draftCrops[src] ? "Cropped ✓" : "Crop"}</button>` : ""}
+            aria-label="Adjust how photo ${i + 1} is cropped at the top of the homepage">${draftCrops[src] ? "Top crop ✓" : "Crop top"}</button>` : ""}
+        ${i === 0 ? `<button type="button" class="photo__cardcrop${draft.crops[src] ? " is-set" : ""}" data-cardcrop
+          aria-label="Adjust how this cover photo is cropped on its card">${draft.crops[src] ? "Card crop ✓" : "Crop card"}</button>` : ""}
         <div class="photo__tools">
           <button type="button" data-move="-1" aria-label="Move photo ${i + 1} earlier" ${i === 0 ? "disabled" : ""}>${arrowL}</button>
           <button type="button" data-remove class="is-remove" aria-label="Remove photo ${i + 1}">${cross}</button>
@@ -683,11 +693,13 @@
   const SHAPES = { tall: "4/5", square: "1/1", wide: "4/3" };
   const ratio = (a) => { const [w, h] = String(a || "4/5").split("/").map(Number); return w && h ? w / h : 0.8; };
   let draftAspect = SHAPES.tall;
-  const crop = { src: null, s: 1, x: 50, y: 50, aspect: 4 / 3, cover: 1 };
+  // mode "card": the piece's card photo (always a tall 4:5 frame); "hero": homepage top (shape is choosable)
+  const crop = { src: null, s: 1, x: 50, y: 50, aspect: 4 / 3, cover: 1, mode: "hero" };
+  const frameAspect = () => (crop.mode === "card" ? SHAPES.tall : draftAspect);
 
   // Keep the photo covering the frame: zoom at least "fill", and no panning past an edge
   function clampCrop() {
-    const F = ratio(draftAspect), A = crop.aspect;
+    const F = ratio(frameAspect()), A = crop.aspect;
     crop.cover = Math.max(1, A / F);
     crop.s = Math.max(crop.cover, crop.s);
     const halfX = 50 / crop.s;                 // half the visible width, in % of the image
@@ -699,7 +711,7 @@
   function paintCrop() {
     clampCrop();
     const img = $("#crop-img");
-    $("#crop-frame").style.aspectRatio = draftAspect.replace("/", " / ");
+    $("#crop-frame").style.aspectRatio = frameAspect().replace("/", " / ");
     img.style.setProperty("--s", crop.s);
     img.style.setProperty("--x", crop.x);
     img.style.setProperty("--y", crop.y);
@@ -710,12 +722,20 @@
     $$("#crop-shapes [data-shape]").forEach((b) => b.setAttribute("aria-pressed", String(SHAPES[b.dataset.shape] === draftAspect)));
   }
 
-  function openCrop(src) {
+  function openCrop(src, mode = "hero") {
     const img = $("#crop-img");
+    crop.mode = mode;
+    const card = mode === "card";
+    $("#crop-title").textContent = card ? "Crop the card photo" : "Crop for the top of the homepage";
+    $("#crop-intro").textContent = card
+      ? "This is the photo on this piece's card in the gallery. Drag to move and use the slider to zoom. Leave it alone and it stays centered automatically."
+      : "Pick a frame shape, then drag to move and use the slider to zoom. What's inside the frame is exactly what the homepage shows.";
+    $("#crop-shapes").hidden = card;
+    $("#crop-shape-note").hidden = card;
     const start = () => {
       crop.src = src;
       crop.aspect = img.naturalWidth / img.naturalHeight || 4 / 3;
-      const saved = draftCrops[src];
+      const saved = card ? draft.crops[src] : draftCrops[src];
       Object.assign(crop, saved ? { s: saved.s, x: saved.x, y: saved.y } : { s: 0, x: 50, y: 50 }); // s: 0 → clamps to "fill"
       paintCrop();
     };
@@ -773,8 +793,9 @@
     $("#crop-save").addEventListener("click", () => {
       const r = (v, d) => Math.round(v * 10 ** d) / 10 ** d;
       const isDefault = Math.abs(crop.s - crop.cover) < 0.005 && Math.abs(crop.x - 50) < 0.5 && Math.abs(crop.y - 50) < 0.5;
-      if (isDefault) delete draftCrops[crop.src];
-      else draftCrops[crop.src] = { s: r(crop.s, 3), x: r(crop.x, 1), y: r(crop.y, 1) };
+      const target = crop.mode === "card" ? draft.crops : draftCrops;   // untouched = automatic (centered)
+      if (isDefault) delete target[crop.src];
+      else target[crop.src] = { s: r(crop.s, 3), x: r(crop.x, 1), y: r(crop.y, 1) };
       $("#cropper").close();
       renderPhotos();
     });
@@ -821,13 +842,16 @@
       if (e.target.closest("[data-remove]")) {
         const [src] = draft.images.splice(i, 1);
         if (!isPending(src)) draftRemoved.push(src);
+        delete draft.crops[src];
+        delete draftCrops[src];
         renderPhotos();
       }
       if (e.target.closest("[data-top]")) {
         draftTop = draft.images[i];
         renderPhotos();
       }
-      if (e.target.closest("[data-crop]")) openCrop(draft.images[i]);
+      if (e.target.closest("[data-crop]")) openCrop(draft.images[i], "hero");
+      if (e.target.closest("[data-cardcrop]")) openCrop(draft.images[i], "card");
     });
     // Show or hide the top-photo buttons as "Feature at the top" is ticked
     form.elements.isHero.addEventListener("change", renderPhotos);
@@ -1027,7 +1051,10 @@
       });
     });
     const out = cleanData();
-    out.products.forEach((p) => { p.images = p.images.map((s) => renamed.get(s) || s); });
+    out.products.forEach((p) => {
+      p.images = p.images.map((s) => renamed.get(s) || s);
+      if (p.crops) p.crops = Object.fromEntries(Object.entries(p.crops).map(([s, c]) => [renamed.get(s) || s, c]));
+    });
     if (data.settings.heroPhoto || data.settings.heroCrops) {
       const crops = {};
       Object.entries(data.settings.heroCrops || {}).forEach(([src, c]) => { crops[renamed.get(src) || src] = c; });
@@ -1059,11 +1086,16 @@
       $("#state").textContent = "Saving to GitHub…";
       const res = await store.publish({ data: out, addFiles, deletePaths, message: commitMessage(c), expectedSha: dataSha });
       // Local state now matches what's on GitHub
-      data.products.forEach((p) => { p.images = p.images.map((s) => {
-        const path = renamed.get(s);
-        if (path) previews.set(path, pending.get(s).url);
-        return path || s;
-      }); });
+      data.products.forEach((p) => {
+        p.images = p.images.map((s) => {
+          const path = renamed.get(s);
+          if (path) previews.set(path, pending.get(s).url);
+          return path || s;
+        });
+        p.crops = Object.fromEntries(Object.entries(p.crops || {})
+          .map(([s, c]) => [renamed.get(s) || s, c])
+          .filter(([s]) => p.images.includes(s)));
+      });
       if (renamed.has(data.settings.heroPhoto)) data.settings.heroPhoto = renamed.get(data.settings.heroPhoto);
       if (data.settings.heroCrops) {
         const crops = {};

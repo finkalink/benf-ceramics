@@ -45,7 +45,12 @@
     if (photos.length) {
       const i = Math.min(opts.index || 0, photos.length - 1);
       const n = photos.length > 1 ? ` (photo ${i + 1} of ${photos.length})` : "";
-      return `<img src="${esc(photos[i])}" alt="${esc(p.name)}, ${esc(p.glaze)} glaze${n}" loading="${opts.eager ? "eager" : "lazy"}" decoding="async">`;
+      // Card crop from the Studio page (made in a 4:5 frame); fitted to each card's real shape on load
+      const c = opts.card && p.crops && p.crops[photos[i]];
+      const cropAttrs = c
+        ? ` class="is-cropped" data-crop="${esc(JSON.stringify({ s: +c.s || 1, x: +(c.x ?? 50), y: +(c.y ?? 50) }))}" style="--s:${+c.s || 1};--x:${+(c.x ?? 50)};--y:${+(c.y ?? 50)}"`
+        : "";
+      return `<img src="${esc(photos[i])}" alt="${esc(p.name)}, ${esc(p.glaze)} glaze${n}"${cropAttrs} loading="${opts.eager ? "eager" : "lazy"}" decoding="async">`;
     }
     return Pottery.svg(p, { ...opts, label: `${p.name}, ${p.glaze} glaze` });
   }
@@ -60,7 +65,7 @@
       <button type="button" class="piece reveal${unavailable ? " is-unavailable" : ""}" data-no="${esc(p.no)}" style="--d:${(i % 4) * 0.06}s"
         aria-label="${esc(p.name)}, ${unavailable ? STATUS_TEXT[st] : money.format(p.price)}. View piece">
         <div class="piece__frame">
-          ${art(p, opts)}
+          ${art(p, { ...opts, card: true })}
           ${badge}
           <span class="piece__view" aria-hidden="true">View piece</span>
         </div>
@@ -181,7 +186,36 @@
     }
     $("#new").hidden = list.length === 0;
     $("#new-grid").innerHTML = list.map((p, i) => card(p, i)).join("");
+    fitCardCrops($("#new-grid"));
   }
+
+  /* Fit a card crop (saved as zoom + focus point in a 4:5 frame) to this card's actual shape,
+     keeping the photo covering the card: no white space. */
+  function fitCardCrop(img) {
+    const frame = img.parentElement;
+    if (!img.naturalWidth || !frame.clientHeight) return;
+    let c;
+    try { c = JSON.parse(img.dataset.crop); } catch { return; }
+    const A = img.naturalWidth / img.naturalHeight;
+    const F = frame.clientWidth / frame.clientHeight;
+    const zoom = c.s / Math.max(1, A / 0.8);           // how far past "fill" the crop was zoomed in the 4:5 editor
+    const s = Math.max(1, A / F) * Math.max(1, zoom);
+    const halfX = 50 / s, halfY = (50 * A) / (s * F);
+    img.style.setProperty("--s", s);
+    img.style.setProperty("--x", Math.min(100 - halfX, Math.max(halfX, c.x)));
+    img.style.setProperty("--y", Math.min(100 - halfY, Math.max(halfY, c.y)));
+  }
+  function fitCardCrops(root = document) {
+    $$("img.is-cropped[data-crop]", root).forEach((img) => {
+      if (img.complete && img.naturalWidth) fitCardCrop(img);
+      else img.addEventListener("load", () => fitCardCrop(img), { once: true });
+    });
+  }
+  let refitTimer;
+  addEventListener("resize", () => {
+    clearTimeout(refitTimer);
+    refitTimer = setTimeout(() => fitCardCrops(), 150); // card shapes change between phone and desktop layouts
+  });
 
   /* ---------------- Collection ---------------- */
   const state = { category: "All", onlyAvailable: false };
@@ -204,6 +238,7 @@
   function renderGrid() {
     const list = visibleList();
     $("#grid").innerHTML = list.map((p, i) => card(p, i)).join("");
+    fitCardCrops($("#grid"));
     $("#grid-empty").hidden = list.length > 0;
     observeReveals();
   }
