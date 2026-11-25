@@ -85,7 +85,7 @@
     const slides = photos.length
       ? photos.map((x, k) => `
           <button type="button" class="hero__slide" data-no="${esc(p.no)}" data-photo="${x.i}"
-            aria-label="View ${esc(p.name)}, photo ${k + 1} of ${photos.length}">${art(p, { eager: k === 0, index: x.i })}</button>`).join("")
+            aria-label="View ${esc(p.name)}, photo ${k + 1} of ${photos.length}">${heroImg(p, x, k)}</button>`).join("")
       : `<button type="button" class="hero__slide" data-no="${esc(p.no)}" aria-label="View ${esc(p.name)}">${art(p, { eager: true, wall: "#FBF8F3", floor: "#EDE4D8" })}</button>`;
     const many = photos.length > 1;
     const chevron = (d) => `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${d}"/></svg>`;
@@ -108,6 +108,16 @@
 
     const n = PRODUCTS.filter(isAvailable).length;
     $("#hero-count").textContent = n ? `${n} piece${n === 1 ? "" : "s"} available now` : "New work coming soon";
+  }
+
+  /* Featured photo with the crop chosen in the Studio page.
+     crop = { s: width as a multiple of the frame width, x/y: the image point (in %) at the frame's center } */
+  function heroImg(p, x, k) {
+    const crop = (SHOP.heroCrops || {})[x.src];
+    if (!crop) return art(p, { eager: k === 0, index: x.i });
+    const s = Number(crop.s) || 1, cx = Number(crop.x ?? 50), cy = Number(crop.y ?? 50);
+    return `<img class="is-cropped" src="${esc(x.src)}" alt="${esc(p.name)}, ${esc(p.glaze)} glaze"
+      style="--s:${s};--x:${cx};--y:${cy}" loading="${k === 0 ? "eager" : "lazy"}" decoding="async">`;
   }
 
   // Featured-piece photo strip. The track is re-rendered, so look elements up each time.

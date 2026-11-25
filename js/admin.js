@@ -508,6 +508,7 @@
   let draft = null;           // working copy
   let draftRemoved = [];      // existing photos removed in this edit
   let draftTop = null;        // photo shown first when this work is featured at the top
+  let draftCrops = {};        // homepage crop per photo of the featured work: { src: { s, x, y } }
 
   function nextNo() {
     const nums = data.products.map((p) => parseInt(p.no, 10)).filter((n) => !isNaN(n));
@@ -583,6 +584,10 @@
     draftTop = f.isHero.checked && draft.images.includes(data.settings.heroPhoto)
       ? data.settings.heroPhoto
       : draft.images[0] || null;
+    draftCrops = {};
+    if (f.isHero.checked) {
+      Object.entries(data.settings.heroCrops || {}).forEach(([src, c]) => { if (draft.images.includes(src)) draftCrops[src] = { ...c }; });
+    }
     $$(".is-touched", form).forEach((el) => el.classList.remove("is-touched"));
 
     $("#categories").innerHTML = [...new Set(data.products.map((x) => x.category).filter(Boolean))]
@@ -646,7 +651,7 @@
     const arrowL = '<svg viewBox="0 0 24 24"><path d="M15 5 8 12l7 7"/></svg>';
     const arrowR = '<svg viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></svg>';
     const cross = '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>';
-    const featured = form.elements.isHero.checked && imgs.length > 1;
+    const featured = form.elements.isHero.checked && imgs.length > 0;
     if (!imgs.includes(draftTop)) draftTop = imgs[0] || null;
     $("#photo-top-hint").hidden = !featured;
     $("#photos").innerHTML = imgs.map((src, i) => `
@@ -654,7 +659,9 @@
         ${photoImg(src, `Photo ${i + 1}`)}
         ${i === 0 ? '<span class="photo__cover">Cover</span>' : ""}
         ${featured ? `<button type="button" class="photo__top" data-top aria-pressed="${src === draftTop}"
-          aria-label="Show photo ${i + 1} first at the top of the homepage">${src === draftTop ? "★ Top photo" : "Use at top"}</button>` : ""}
+          aria-label="Show photo ${i + 1} first at the top of the homepage">${src === draftTop ? "★ Top photo" : "Use at top"}</button>
+          <button type="button" class="photo__crop${draftCrops[src] ? " is-set" : ""}" data-crop
+            aria-label="Adjust how photo ${i + 1} is cropped on the homepage">${draftCrops[src] ? "Cropped ✓" : "Crop"}</button>` : ""}
         <div class="photo__tools">
           <button type="button" data-move="-1" aria-label="Move photo ${i + 1} earlier" ${i === 0 ? "disabled" : ""}>${arrowL}</button>
           <button type="button" data-remove class="is-remove" aria-label="Remove photo ${i + 1}">${cross}</button>
@@ -665,6 +672,85 @@
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
         Add photos
       </button></li>`;
+    // With a single photo there's nothing to choose between
+    if (imgs.length < 2) $$("#photos [data-top]").forEach((b) => b.remove());
+  }
+
+  /* ---------- Homepage crop (featured work) ----------
+     Frame is 4:5 like the homepage. Crop = { s: image width ÷ frame width, x/y: image point (%) at the frame center } */
+  const FRAME_ASPECT = 4 / 5;
+  const crop = { src: null, s: 1, x: 50, y: 50, aspect: 1, min: 1, cover: 1 };
+
+  function paintCrop() {
+    const img = $("#crop-img");
+    img.style.setProperty("--s", crop.s);
+    img.style.setProperty("--x", crop.x);
+    img.style.setProperty("--y", crop.y);
+    $("#crop-zoom").value = crop.s;
+  }
+
+  function openCrop(src) {
+    const img = $("#crop-img");
+    const start = () => {
+      crop.src = src;
+      crop.aspect = img.naturalWidth / img.naturalHeight || 4 / 3;
+      crop.min = Math.min(1, crop.aspect / FRAME_ASPECT);    // whole photo visible
+      crop.cover = Math.max(1, crop.aspect / FRAME_ASPECT);  // photo fills the frame (the old default)
+      const saved = draftCrops[src];
+      Object.assign(crop, saved ? { s: saved.s, x: saved.x, y: saved.y } : { s: crop.cover, x: 50, y: 50 });
+      const zoom = $("#crop-zoom");
+      zoom.min = crop.min.toFixed(3);
+      zoom.max = (crop.cover * 2.5).toFixed(3);
+      paintCrop();
+    };
+    img.onload = start;
+    img.src = imgSrc(src);
+    if (img.complete && img.naturalWidth) start();
+    $("#cropper").showModal();
+  }
+
+  function setupCrop() {
+    const frame = $("#crop-frame");
+    const clamp = (v) => Math.max(0, Math.min(100, v));
+    let drag = null;
+    frame.addEventListener("pointerdown", (e) => {
+      drag = { x: e.clientX, y: e.clientY, cx: crop.x, cy: crop.y };
+      frame.setPointerCapture(e.pointerId);
+      frame.classList.add("is-dragging");
+    });
+    frame.addEventListener("pointermove", (e) => {
+      if (!drag) return;
+      const w = frame.clientWidth * crop.s;           // shown image width in px
+      const h = w / crop.aspect;
+      crop.x = clamp(drag.cx - ((e.clientX - drag.x) / w) * 100);
+      crop.y = clamp(drag.cy - ((e.clientY - drag.y) / h) * 100);
+      paintCrop();
+    });
+    const end = () => { drag = null; frame.classList.remove("is-dragging"); };
+    frame.addEventListener("pointerup", end);
+    frame.addEventListener("pointercancel", end);
+    // Arrow keys nudge for keyboard users
+    frame.addEventListener("keydown", (e) => {
+      const step = e.shiftKey ? 5 : 1;
+      const moves = { ArrowLeft: [step, 0], ArrowRight: [-step, 0], ArrowUp: [0, step], ArrowDown: [0, -step] }[e.key];
+      if (!moves) return;
+      e.preventDefault();
+      crop.x = clamp(crop.x + moves[0]);
+      crop.y = clamp(crop.y + moves[1]);
+      paintCrop();
+    });
+    $("#crop-zoom").addEventListener("input", (e) => { crop.s = Number(e.target.value); paintCrop(); });
+    $("#crop-fit").addEventListener("click", () => { Object.assign(crop, { s: crop.min, x: 50, y: 50 }); paintCrop(); });
+    $("#crop-fill").addEventListener("click", () => { Object.assign(crop, { s: crop.cover, x: 50, y: 50 }); paintCrop(); });
+    $("#crop-cancel").addEventListener("click", () => $("#cropper").close());
+    $("#crop-save").addEventListener("click", () => {
+      const r = (v, d) => Math.round(v * 10 ** d) / 10 ** d;
+      const isDefault = Math.abs(crop.s - crop.cover) < 0.005 && Math.abs(crop.x - 50) < 0.5 && Math.abs(crop.y - 50) < 0.5;
+      if (isDefault) delete draftCrops[crop.src];
+      else draftCrops[crop.src] = { s: r(crop.s, 3), x: r(crop.x, 1), y: r(crop.y, 1) };
+      $("#cropper").close();
+      renderPhotos();
+    });
   }
 
   async function addFiles(files) {
@@ -714,6 +800,7 @@
         draftTop = draft.images[i];
         renderPhotos();
       }
+      if (e.target.closest("[data-crop]")) openCrop(draft.images[i]);
     });
     // Show or hide the top-photo buttons as "Feature at the top" is ticked
     form.elements.isHero.addEventListener("change", renderPhotos);
@@ -785,7 +872,7 @@
       data.products = data.products.filter((p) => p !== target);
       const s = data.settings;
       s.newPieces = (s.newPieces || []).filter((n) => n !== target.no);
-      if (s.heroPiece === target.no) { s.heroPiece = ""; s.heroPhoto = ""; }
+      if (s.heroPiece === target.no) { s.heroPiece = ""; s.heroPhoto = ""; delete s.heroCrops; }
       delete records[target.no];
       editor.close();
       renderList();
@@ -835,9 +922,13 @@
     if (f.isHero.checked) {
       s.heroPiece = target.no;
       s.heroPhoto = target.images.includes(draftTop) ? draftTop : target.images[0] || "";
+      const crops = {};
+      target.images.forEach((src) => { if (draftCrops[src]) crops[src] = draftCrops[src]; });
+      if (Object.keys(crops).length) s.heroCrops = crops; else delete s.heroCrops;
     } else if (s.heroPiece === target.no) {
       s.heroPiece = "";
       s.heroPhoto = "";
+      delete s.heroCrops;
     }
 
     renderList();
@@ -908,8 +999,11 @@
     });
     const out = cleanData();
     out.products.forEach((p) => { p.images = p.images.map((s) => renamed.get(s) || s); });
-    if (data.settings.heroPhoto) {
-      out.settings = { ...data.settings, heroPhoto: renamed.get(data.settings.heroPhoto) || data.settings.heroPhoto };
+    if (data.settings.heroPhoto || data.settings.heroCrops) {
+      const crops = {};
+      Object.entries(data.settings.heroCrops || {}).forEach(([src, c]) => { crops[renamed.get(src) || src] = c; });
+      out.settings = { ...data.settings, heroPhoto: renamed.get(data.settings.heroPhoto) || data.settings.heroPhoto || "" };
+      if (Object.keys(crops).length) out.settings.heroCrops = crops; else delete out.settings.heroCrops;
     }
     const stillUsed = new Set(out.products.flatMap((p) => p.images));
     const deletePaths = [...removedPaths].filter((p) => !stillUsed.has(p) && p.startsWith("images/"));
@@ -942,6 +1036,11 @@
         return path || s;
       }); });
       if (renamed.has(data.settings.heroPhoto)) data.settings.heroPhoto = renamed.get(data.settings.heroPhoto);
+      if (data.settings.heroCrops) {
+        const crops = {};
+        Object.entries(data.settings.heroCrops).forEach(([src, c]) => { crops[renamed.get(src) || src] = c; });
+        data.settings.heroCrops = crops;
+      }
       renamed.forEach((_, id) => pending.delete(id));
       removedPaths.clear();
       dataSha = res.dataSha;
@@ -1044,6 +1143,7 @@
   setupConnect();
   setupList();
   setupEditor();
+  setupCrop();
   setupSettings();
   setupApp();
 

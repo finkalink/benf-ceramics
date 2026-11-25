@@ -141,7 +141,7 @@
             <h3>Photos</h3>
             <span class="group__hint">First photo is the cover. Drag to reorder or use the arrows.</span>
           </div>
-          <p class="group__hint photo-top-hint" id="photo-top-hint" hidden>This work is featured at the top of the homepage. Tap <strong>Use at top</strong> on the photo visitors should see first; they can swipe to the rest.</p>
+          <p class="group__hint photo-top-hint" id="photo-top-hint" hidden>This work is featured at the top of the homepage. Tap <strong>Use at top</strong> on the photo visitors should see first (they can swipe to the rest), and <strong>Crop</strong> to choose how each photo is framed there.</p>
           <ul class="photos" id="photos"></ul>
           <p class="group__hint" id="photo-status" aria-live="polite"></p>
         </section>
@@ -255,6 +255,28 @@
         </section>
       </div>
     </form>
+  </dialog>
+
+  <!-- ============ HOMEPAGE CROP ============ -->
+  <dialog class="confirm cropper" id="cropper" aria-labelledby="crop-title">
+    <h2 id="crop-title">Crop for the homepage</h2>
+    <p>Drag the photo to move it. Use the slider to zoom.</p>
+    <div class="crop__frame" id="crop-frame" tabindex="0" aria-label="Crop preview. Drag, or use the arrow keys, to move the photo.">
+      <img id="crop-img" class="is-cropped" alt="" draggable="false">
+    </div>
+    <div class="crop__zoom">
+      <span aria-hidden="true">−</span>
+      <input type="range" id="crop-zoom" step="0.005" aria-label="Zoom">
+      <span aria-hidden="true">+</span>
+    </div>
+    <div class="crop__presets">
+      <button type="button" class="link" id="crop-fit">Whole piece</button>
+      <button type="button" class="link" id="crop-fill">Fill frame</button>
+    </div>
+    <div class="confirm__actions">
+      <button type="button" class="btn btn--ghost" id="crop-cancel">Cancel</button>
+      <button type="button" class="btn" id="crop-save">Use this crop</button>
+    </div>
   </dialog>
 
   <!-- ============ CONFIRM ============ -->

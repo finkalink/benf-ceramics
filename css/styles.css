@@ -355,8 +355,19 @@ strong { font-weight: 600; }
   scroll-snap-stop: always;
   cursor: pointer;
 }
-.hero__slide > * { width: 100%; height: 100%; object-fit: cover; transition: transform .9s var(--ease-out); }
-.hero__slide:hover > *, .hero__slide:focus-visible > * { transform: scale(1.03); }
+.hero__slide { position: relative; }
+.hero__slide > * { width: 100%; height: 100%; object-fit: cover; transition: scale .9s var(--ease-out); }
+.hero__slide:hover > *, .hero__slide:focus-visible > * { scale: 1.03; }
+/* Crop set in the Studio page: --s = width relative to the frame, --x/--y = image point at the frame center */
+.hero__slide > img.is-cropped {
+  position: absolute;
+  left: 50%; top: 50%;
+  width: calc(var(--s) * 100%);
+  height: auto;
+  max-width: none;
+  object-fit: fill;
+  transform: translate(calc(var(--x) * -1%), calc(var(--y) * -1%));
+}
 .hero__slide:focus-visible { outline-offset: -4px; }
 
 .hero__nav {
