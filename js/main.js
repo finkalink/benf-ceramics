@@ -68,7 +68,7 @@
           <span class="wall-label__no">No. ${esc(p.no)} · ${esc(p.year)}</span>
           <span class="wall-label__name">${esc(p.name)}</span>
           <span class="wall-label__price">${unavailable ? STATUS_TEXT[st] : money.format(p.price)}</span>
-          <span class="wall-label__meta">${esc(p.clay)}, ${esc(String(p.glaze || "").toLowerCase())} glaze</span>
+          <span class="wall-label__meta">${[p.clay, p.glaze].filter(Boolean).map(esc).join(" · ")}</span>
         </div>
       </button>`;
   }
@@ -223,9 +223,18 @@
 
   function current() { return roomList[roomIndex]; }
 
+  /* Sliding scale: each piece has a suggested price; buyers choose what to pay. */
+  const chosen = {}; // piece no -> amount picked on the slider
+  const amountFor = (p) => chosen[p.no] ?? p.price;
+  function scaleFor(p) {
+    const step = p.price <= 20 ? 1 : 5;
+    const round = (v) => Math.max(step, Math.round(v / step) * step);
+    return { min: round(p.price * 0.5), max: round(p.price * 2), step };
+  }
+
   function venmoUrl(p) {
     const note = `BEN F No. ${p.no} · ${p.name}`;
-    return `https://venmo.com/?txn=pay&recipients=${encodeURIComponent(SHOP.venmo)}&amount=${p.price}&note=${encodeURIComponent(note)}`;
+    return `https://venmo.com/?txn=pay&recipients=${encodeURIComponent(SHOP.venmo)}&amount=${amountFor(p)}&note=${encodeURIComponent(note)}`;
   }
   function mailto(subject, body = "") {
     return `mailto:${SHOP.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
@@ -235,11 +244,11 @@
     const st = statusOf(p);
     let action;
     if (st === "available") {
-      action = `<button type="button" class="btn btn--block" data-action="buy">Buy this piece · ${money.format(p.price)}</button>
-        <p class="room__note">Pay on Venmo, then mark it reserved or purchased. Pickup is free, and I'll quote shipping by email.</p>`;
+      action = `<button type="button" class="btn btn--block" data-action="buy">Buy this piece</button>
+        <p class="room__note">Sliding scale: pay what works for you, then mark it reserved or purchased. Pickup is free, and I'll quote shipping by email.</p>`;
     } else if (st === "held-you" || st === "yours") {
       action = `<p class="room__note">You let me know about this one. I'll confirm with you directly.</p>
-        ${st === "held-you" ? `<a class="btn btn--block" href="${venmoUrl(p)}" target="_blank" rel="noopener">Pay ${money.format(p.price)} on Venmo ${ICON_ARROW}</a>` : ""}`;
+        ${st === "held-you" ? `<a class="btn btn--block" href="${venmoUrl(p)}" target="_blank" rel="noopener">Pay ${money.format(amountFor(p))} on Venmo ${ICON_ARROW}</a>` : ""}`;
     } else if (st === "reserved") {
       action = `<a class="btn btn--ghost btn--block" href="${mailto(`Waitlist: No. ${p.no} ${p.name}`, `Hi Ben, if No. ${p.no} (${p.name}) frees up, I'd love it.\n\n`)}">Ask to be next in line</a>
         <p class="room__note">Someone has this on hold. Holds last 48 hours.</p>`;
@@ -250,13 +259,11 @@
     return `
       <p class="label label--accent">No. ${esc(p.no)} · ${esc(p.category)}</p>
       <h2 class="room__title" id="room-title">${esc(p.name)}</h2>
-      <p class="room__price">${st === "available" ? money.format(p.price) : ""}<span class="pill pill--${st === "held-you" ? "reserved" : st === "yours" ? "sold" : st}">${STATUS_TEXT[st]}</span></p>
+      <p class="room__price">${st === "available" ? `${money.format(p.price)} <span class="room__suggest">suggested</span>` : ""}<span class="pill pill--${st === "held-you" ? "reserved" : st === "yours" ? "sold" : st}">${STATUS_TEXT[st]}</span></p>
       <p class="room__desc">${esc(p.description)}</p>
       <dl class="specs">
-        <dt>Clay</dt><dd>${esc(p.clay)}</dd>
-        <dt>Glaze</dt><dd>${esc(p.glaze)}</dd>
-        <dt>Size</dt><dd>${esc(p.size)}</dd>
-        <dt>Made</dt><dd>${esc(p.year)}</dd>
+        ${[["Clay", p.clay], ["Glaze", p.glaze], ["Size", p.size], ["Made", p.year]]
+          .filter(([, v]) => v).map(([k, v]) => `<dt>${k}</dt><dd>${esc(v)}</dd>`).join("")}
       </dl>
       <div>${action}</div>`;
   }
@@ -264,17 +271,28 @@
   function buyView(p) {
     return `
       <button type="button" class="link buy__back" data-action="details">← Back to the piece</button>
-      <p class="label label--accent">No. ${esc(p.no)} · ${money.format(p.price)}</p>
+      <p class="label label--accent">No. ${esc(p.no)} · Suggested ${money.format(p.price)}</p>
       <h2 class="room__title" id="room-title">${esc(p.name)}</h2>
 
       <div class="buy__step">
-        <div class="buy__step-head"><span>1</span><h3>Pay on Venmo</h3></div>
-        <a class="btn btn--block" href="${venmoUrl(p)}" target="_blank" rel="noopener" data-action="venmo">Pay ${money.format(p.price)} to @${esc(SHOP.venmo)} ${ICON_ARROW}</a>
-        <p class="buy__hint">Opens Venmo with the amount and note filled in. Want it held first? Skip this and choose "Reserve" below.</p>
+        <div class="buy__step-head"><span>1</span><h3>Choose your price</h3></div>
+        <div class="scale">
+          <output class="scale__amount" id="scale-amount" for="scale-input">${money.format(amountFor(p))}</output>
+          <input type="range" id="scale-input" class="scale__input" aria-label="Your price"
+            min="${scaleFor(p).min}" max="${scaleFor(p).max}" step="${scaleFor(p).step}" value="${amountFor(p)}">
+          <div class="scale__ends"><span>${money.format(scaleFor(p).min)}</span><button type="button" class="link" data-action="suggested">Suggested ${money.format(p.price)}</button><span>${money.format(scaleFor(p).max)}</span></div>
+        </div>
+        <p class="buy__hint">Pay what works for you. Paying above the suggestion helps fund the next firing.</p>
       </div>
 
       <div class="buy__step">
-        <div class="buy__step-head"><span>2</span><h3>Let me know</h3></div>
+        <div class="buy__step-head"><span>2</span><h3>Pay on Venmo</h3></div>
+        <a class="btn btn--block" href="${venmoUrl(p)}" target="_blank" rel="noopener" data-action="venmo"><span id="venmo-label">Pay ${money.format(amountFor(p))} to @${esc(SHOP.venmo)}</span> ${ICON_ARROW}</a>
+        <p class="buy__hint">Opens Venmo with the amount and note filled in. Want it held first? Skip this and choose "Reserved" below.</p>
+      </div>
+
+      <div class="buy__step">
+        <div class="buy__step-head"><span>3</span><h3>Let me know</h3></div>
         <form class="form" id="buy-form" novalidate>
           <fieldset class="choice-group">
             <legend>This piece is</legend>
@@ -322,7 +340,7 @@
         <p>${reserved
           ? `I'll hold the ${esc(p.name)} for 48 hours. Pay on Venmo whenever you're ready.`
           : `The ${esc(p.name)} is yours. I'll confirm ${data.delivery === "Shipping" ? "the shipping cost" : "a pickup time"} with you within a day.`}</p>
-        ${reserved ? `<a class="btn btn--block" href="${venmoUrl(p)}" target="_blank" rel="noopener">Pay ${money.format(p.price)} on Venmo ${ICON_ARROW}</a>` : ""}
+        ${reserved ? `<a class="btn btn--block" href="${venmoUrl(p)}" target="_blank" rel="noopener">Pay ${money.format(amountFor(p))} on Venmo ${ICON_ARROW}</a>` : ""}
         <p class="room__note"><button type="button" class="link" data-action="close">Keep looking</button></p>
       </div>`;
   }
@@ -433,6 +451,22 @@
     };
     form.addEventListener("change", syncLabels);
 
+    // Sliding scale
+    const slider = $("#scale-input");
+    const venmoBtn = $('[data-action="venmo"]');
+    const setAmount = (v) => {
+      chosen[p.no] = Number(v);
+      slider.value = v;
+      $("#scale-amount").textContent = money.format(chosen[p.no]);
+      $("#venmo-label").textContent = `Pay ${money.format(chosen[p.no])} to @${SHOP.venmo}`;
+      venmoBtn.href = venmoUrl(p);
+      const pct = ((slider.value - slider.min) / (slider.max - slider.min)) * 100;
+      slider.style.setProperty("--fill", `${pct}%`);
+    };
+    setAmount(amountFor(p));
+    slider.addEventListener("input", () => setAmount(slider.value));
+    $('[data-action="suggested"]').addEventListener("click", () => setAmount(p.price));
+
     // Paying on Venmo implies "Purchased"
     $('[data-action="venmo"]').addEventListener("click", () => {
       form.querySelector('input[value="purchased"]').checked = true;
@@ -453,7 +487,7 @@
       const fields = {
         Status: verb,
         Piece: `No. ${p.no} · ${p.name}`,
-        Price: money.format(p.price),
+        Price: `${money.format(amountFor(p))} (suggested ${money.format(p.price)})`,
         Name: data.name,
         Contact: data.contact,
         Delivery: data.delivery,
