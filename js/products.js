@@ -1,99 +1,195 @@
 /*
-  YOUR INVENTORY
-  --------------
-  Add, edit, or remove pieces here. Each piece is one { ... } block.
+  =====================================================================
+  BEN F · YOUR SHOP SETTINGS AND INVENTORY
+  =====================================================================
+  This is the only file you need to edit to change what's for sale.
 
-  - id:        unique short name, no spaces (used in links)
-  - image:     path to a photo in the /images folder, e.g. "images/speckled-mug.jpg"
-               leave as "" to show a colored placeholder (uses `glaze`)
-  - glaze:     placeholder color, only used when there is no image
-  - status:    "available" or "sold"
-  - category:  used for the filter buttons at the top of the shop
+  STATUS (what everyone sees):
+    "available"  can be bought
+    "reserved"   someone asked you to hold it (shows "On hold")
+    "sold"       gone
+
+  When you get a "Reserved" or "Purchased" email, change that piece's
+  status here and publish. Until you do, only the buyer's own browser
+  shows it as theirs.
+
+  PHOTOS:
+    Put a photo in /images and set  image: "images/your-photo.jpg"
+    Portrait photos (4:5) on a plain wall look best.
+    Leave image as "" to show a drawn placeholder in the glaze color.
+  =====================================================================
 */
 
 const SHOP = {
-  name: "Studio Name",
-  email: "hello@example.com",   // where purchase inquiries go
+  name: "BEN F",
+  email: "bdfink.su@gmail.com",      // notifications + "Email Ben" button
+  venmo: "finkalink",                // without the @
   currency: "USD",
+  heroPiece: "036",                 // catalog no. shown large at the top
+  newPieces: ["043", "042", "041"],  // "New from the kiln" (first one is shown largest)
 };
 
 const PRODUCTS = [
   {
-    id: "speckled-mug",
-    name: "Speckled Mug",
-    category: "Mugs",
-    price: 42,
+    no: "043",
+    name: "Tenmoku Bottle Vase",
+    category: "Vases",
+    shape: "vase",
+    price: 68,
     status: "available",
+    year: 2026,
+    clay: "Stoneware",
+    glaze: "Tenmoku",
+    size: "8 in tall",
+    description: "A glossy, near-black glaze that breaks to rust wherever it thins. Holds a few stems or stands fine on its own.",
     image: "",
-    glaze: "#e8e0d2",
-    description: "A generous everyday mug in speckled stoneware with a satin white glaze. Comfortable pulled handle.",
-    dimensions: "4\" tall, holds ~12 oz",
-    clay: "Speckled stoneware",
-    glazeName: "Satin white",
+    glazeColor: "#3B2219",
+    clayColor: "#B98A64",
   },
   {
-    id: "celadon-bowl",
+    no: "042",
     name: "Celadon Serving Bowl",
     category: "Bowls",
+    shape: "bowl",
     price: 85,
     status: "available",
-    image: "",
-    glaze: "#a9c3b4",
-    description: "Wide serving bowl with a pale celadon glaze that pools darker in the carved lines.",
-    dimensions: "10\" wide, 3.5\" tall",
+    year: 2026,
     clay: "Porcelain",
-    glazeName: "Celadon",
-  },
-  {
-    id: "tenmoku-vase",
-    name: "Tenmoku Bud Vase",
-    category: "Vases",
-    price: 58,
-    status: "available",
+    glaze: "Celadon",
+    size: "10 in wide · 3.5 in tall",
+    description: "Wide and shallow, made for salads and fruit. The pale green pools darker in the carved lines.",
     image: "",
-    glaze: "#4a2e22",
-    description: "Small bud vase with a glossy tenmoku glaze breaking to rust at the rim.",
-    dimensions: "6\" tall",
-    clay: "Stoneware",
-    glazeName: "Tenmoku",
+    glazeColor: "#A9C3B0",
+    clayColor: "#E8E0D6",
   },
   {
-    id: "blue-plates",
-    name: "Cobalt Dinner Plate",
+    no: "041",
+    name: "Speckled Morning Mug",
+    category: "Mugs",
+    shape: "mug",
+    price: 42,
+    status: "available",
+    year: 2026,
+    clay: "Speckled stoneware",
+    glaze: "Satin white",
+    size: "4 in tall · holds 12 oz",
+    description: "My everyday mug. A wide handle with room for three fingers and a lip that's comfortable to drink from.",
+    image: "",
+    glazeColor: "#ECE5D8",
+    clayColor: "#C9A27E",
+    speckle: true,
+  },
+  {
+    no: "038",
+    name: "Ash Glaze Yunomi",
+    category: "Cups",
+    shape: "cup",
+    price: 36,
+    status: "reserved",
+    year: 2026,
+    clay: "Stoneware",
+    glaze: "Wood ash",
+    size: "4.5 in tall · holds 8 oz",
+    description: "A handleless tea cup. The ash glaze runs and drips a little differently on every one.",
+    image: "",
+    glazeColor: "#B5A36E",
+    clayColor: "#A87F5C",
+  },
+  {
+    no: "036",
+    name: "Shino Lidded Jar",
+    category: "Jars",
+    shape: "jar",
+    price: 95,
+    status: "available",
+    year: 2025,
+    clay: "Stoneware",
+    glaze: "Shino",
+    size: "6 in tall",
+    description: "A snug lid for sugar, salt or coffee beans. The glaze shifts from peach to soft orange.",
+    image: "",
+    glazeColor: "#E3B48D",
+    clayColor: "#C08860",
+  },
+  {
+    no: "035",
+    name: "Iron Red Dinner Plate",
     category: "Plates",
+    shape: "plate",
     price: 48,
     status: "available",
-    image: "",
-    glaze: "#3e5c8a",
-    description: "Dinner plate with a deep cobalt center fading to raw clay at the edge.",
-    dimensions: "10.5\" diameter",
+    year: 2025,
     clay: "Stoneware",
-    glazeName: "Cobalt blue",
+    glaze: "Iron red",
+    size: "10.5 in wide",
+    description: "A deep, warm red with a raw clay rim. Strong enough for everyday dinners.",
+    image: "",
+    glazeColor: "#8E3B22",
+    clayColor: "#B98A64",
   },
   {
-    id: "ash-mug",
-    name: "Ash Glaze Mug",
-    category: "Mugs",
-    price: 45,
-    status: "sold",
-    image: "",
-    glaze: "#b7a37a",
-    description: "Wood-ash glaze with natural drips down the body.",
-    dimensions: "3.75\" tall, holds ~10 oz",
-    clay: "Stoneware",
-    glazeName: "Ash",
-  },
-  {
-    id: "terracotta-planter",
+    no: "033",
     name: "Terracotta Planter",
     category: "Planters",
+    shape: "planter",
     price: 64,
     status: "available",
-    image: "",
-    glaze: "#b86b47",
-    description: "Unglazed exterior planter with a drainage hole and matching saucer.",
-    dimensions: "6\" wide, 5.5\" tall",
+    year: 2025,
     clay: "Terracotta",
-    glazeName: "Unglazed / clear interior",
+    glaze: "Unglazed, clear inside",
+    size: "6 in wide · with saucer",
+    description: "Raw terracotta that breathes, with a drainage hole and a matching saucer.",
+    image: "",
+    glazeColor: "#B86B47",
+    clayColor: "#B86B47",
+  },
+  {
+    no: "029",
+    name: "Oatmeal Pasta Bowl",
+    category: "Bowls",
+    shape: "bowl",
+    price: 52,
+    status: "available",
+    year: 2025,
+    clay: "Speckled stoneware",
+    glaze: "Oatmeal",
+    size: "8.5 in wide · 2.5 in tall",
+    description: "Low and wide with a soft, speckled matte glaze. Good for pasta, curry and big salads.",
+    image: "",
+    glazeColor: "#D8C7A8",
+    clayColor: "#B59272",
+    speckle: true,
+  },
+  {
+    no: "027",
+    name: "Copper Green Bud Vase",
+    category: "Vases",
+    shape: "vase",
+    price: 38,
+    status: "sold",
+    year: 2025,
+    clay: "Porcelain",
+    glaze: "Copper green",
+    size: "6 in tall",
+    description: "Small and bright, sized for a single stem on a windowsill.",
+    image: "",
+    glazeColor: "#5E7F64",
+    clayColor: "#E8E0D6",
+  },
+  {
+    no: "024",
+    name: "Black Satin Mug",
+    category: "Mugs",
+    shape: "mug",
+    price: 42,
+    status: "sold",
+    year: 2025,
+    clay: "Stoneware",
+    glaze: "Black satin",
+    size: "4 in tall · holds 12 oz",
+    description: "A soft-touch matte black with the raw clay foot left bare.",
+    image: "",
+    glazeColor: "#2A2623",
+    clayColor: "#A87F5C",
   },
 ];

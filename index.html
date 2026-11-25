@@ -2,81 +2,236 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Studio Name — Handmade Ceramics</title>
-  <meta name="description" content="Handmade, wheel-thrown ceramics. Mugs, bowls, vases and more — each piece one of a kind.">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>BEN F · Handmade Ceramics</title>
+  <meta name="description" content="Wheel-thrown mugs, bowls and vases by BEN F. Each piece is thrown, trimmed, stamped and numbered by hand.">
+  <meta name="theme-color" content="#3A2F28">
+
+  <meta property="og:title" content="BEN F · Handmade Ceramics">
+  <meta property="og:description" content="Thrown, trimmed, stamped and numbered by hand.">
+  <meta property="og:image" content="https://finkalink.github.io/benf-ceramics/assets/brand/share.png">
+  <meta property="og:type" content="website">
+
+  <link rel="icon" href="assets/brand/favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/brand/favicon_32.png">
+  <link rel="apple-touch-icon" href="assets/brand/favicon_180.png">
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css">
+  <script>document.documentElement.classList.add("js");</script>
 </head>
 <body>
-  <header class="site-header">
-    <div class="container header-inner">
-      <a href="#" class="logo">Studio Name</a>
-      <nav class="nav">
-        <a href="#shop">Shop</a>
-        <a href="#about">About</a>
-        <a href="#contact">Contact</a>
+  <a class="skip-link" href="#work">Skip to the work</a>
+
+  <!-- ============ NAV ============ -->
+  <header class="nav" id="nav">
+    <div class="wrap nav__inner">
+      <a href="#top" class="lockup" aria-label="BEN F Handmade Ceramics, back to top">
+        <span class="monogram" aria-hidden="true"></span>
+        <span class="lockup__rule" aria-hidden="true"></span>
+        <span class="lockup__text">
+          <span class="lockup__name">BEN F</span>
+          <span class="lockup__sub">Handmade Ceramics</span>
+        </span>
+      </a>
+
+      <nav class="nav__links" aria-label="Main">
+        <a href="#work" data-section="work">Work</a>
+        <a href="#how" data-section="how">How to buy</a>
+        <a href="#studio" data-section="studio">Studio</a>
+        <a href="#contact" data-section="contact">Contact</a>
       </nav>
+
+      <button class="nav__menu-btn" id="menu-open" aria-expanded="false" aria-controls="menu">Menu</button>
     </div>
   </header>
 
-  <main>
-    <section class="hero">
-      <div class="container hero-inner">
-        <p class="eyebrow">Handmade ceramics</p>
-        <h1>Pieces made slowly,<br>for everyday use.</h1>
-        <p class="lede">Wheel-thrown stoneware and porcelain, glazed and fired in small batches. Every piece is one of a kind.</p>
-        <a href="#shop" class="button">Browse the collection</a>
+  <!-- Full-screen mobile menu (museum floor guide) -->
+  <div class="menu" id="menu" hidden>
+    <div class="wrap menu__top">
+      <span class="monogram" aria-hidden="true"></span>
+      <button class="menu__close" id="menu-close">Close</button>
+    </div>
+    <nav class="wrap menu__links" aria-label="Main">
+      <a href="#work"><span>01</span>Work</a>
+      <a href="#how"><span>02</span>How to buy</a>
+      <a href="#studio"><span>03</span>Studio</a>
+      <a href="#contact"><span>04</span>Contact</a>
+    </nav>
+  </div>
+
+  <main id="top">
+    <!-- ============ HERO ============ -->
+    <section class="hero room--dark" aria-labelledby="hero-title">
+      <div class="wrap hero__grid">
+        <div class="hero__text">
+          <p class="label label--accent reveal">Wheel-thrown in small batches</p>
+          <h1 id="hero-title" class="display reveal">Thrown, trimmed, stamped and numbered by&nbsp;hand.</h1>
+          <p class="hero__lede reveal">Mugs, bowls and vases made to be used every day. Each one is a single piece. When it's gone, it's gone.</p>
+          <div class="hero__actions reveal">
+            <a href="#work" class="btn btn--light">See available work</a>
+            <a href="#how" class="link link--light">How buying works</a>
+          </div>
+          <p class="hero__count label reveal" id="hero-count" aria-live="polite"></p>
+        </div>
+
+        <figure class="hero__art reveal" id="hero-art">
+          <!-- filled by main.js -->
+        </figure>
       </div>
     </section>
 
-    <section id="shop" class="shop">
-      <div class="container">
-        <div class="section-head">
-          <h2>Available work</h2>
-          <div class="filters" role="group" aria-label="Filter by category">
-            <!-- filter buttons are added by js/main.js -->
+    <!-- ============ NEW FROM THE KILN ============ -->
+    <section class="section" id="new" aria-labelledby="new-title">
+      <div class="wrap">
+        <header class="section__head reveal">
+          <p class="label label--accent">Latest firing</p>
+          <h2 id="new-title" class="title">New from the kiln</h2>
+        </header>
+        <div class="new-grid" id="new-grid"></div>
+      </div>
+    </section>
+
+    <!-- ============ COLLECTION ============ -->
+    <section class="section section--paper" id="work" aria-labelledby="work-title">
+      <div class="wrap">
+        <header class="section__head section__head--split reveal">
+          <div>
+            <p class="label label--accent">The collection</p>
+            <h2 id="work-title" class="title">All work</h2>
+          </div>
+          <div class="toolbar">
+            <div class="filters" id="filters" role="group" aria-label="Filter by type"></div>
+            <label class="toggle">
+              <input type="checkbox" id="only-available">
+              <span class="toggle__track" aria-hidden="true"></span>
+              <span>Available only</span>
+            </label>
+          </div>
+        </header>
+        <div class="grid" id="grid" aria-live="polite"></div>
+        <p class="grid__empty" id="grid-empty" hidden>Nothing here right now. A new firing is on the way.</p>
+      </div>
+    </section>
+
+    <!-- ============ HOW TO BUY ============ -->
+    <section class="section" id="how" aria-labelledby="how-title">
+      <div class="wrap">
+        <header class="section__head reveal">
+          <p class="label label--accent">Simple and personal</p>
+          <h2 id="how-title" class="title">How to buy</h2>
+        </header>
+
+        <ol class="steps">
+          <li class="step reveal">
+            <span class="step__no">01</span>
+            <h3 class="step__title">Choose a piece</h3>
+            <p>Open anything marked available and tap <strong>Buy this piece</strong>.</p>
+          </li>
+          <li class="step reveal">
+            <span class="step__no">02</span>
+            <h3 class="step__title">Pay on Venmo</h3>
+            <p>Send the price to <strong class="venmo-handle">@finkalink</strong>. The note fills in for you.</p>
+          </li>
+          <li class="step reveal">
+            <span class="step__no">03</span>
+            <h3 class="step__title">Mark it yours</h3>
+            <p>Tell me you've paid, or ask me to hold it for 48 hours. I'll confirm within a day.</p>
+          </li>
+        </ol>
+
+        <div class="delivery reveal">
+          <div class="delivery__item">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 4l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>
+            <div><strong>Pickup</strong><span>Free. We'll set a time.</span></div>
+          </div>
+          <div class="delivery__item">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h11v9H3zM14 10h4l3 3v3h-7zM7 19a2 2 0 1 0 0-.01M17 19a2 2 0 1 0 0-.01"/></svg>
+            <div><strong>Shipping</strong><span>Quoted by email, packed with care.</span></div>
           </div>
         </div>
-        <div id="product-grid" class="product-grid" aria-live="polite"></div>
       </div>
     </section>
 
-    <section id="about" class="about">
-      <div class="container about-inner">
-        <div class="about-image" aria-hidden="true"></div>
-        <div>
-          <h2>About the studio</h2>
-          <p>Replace this with your story — how you got into clay, where you work, what you love making, and what makes your pieces yours.</p>
-          <p>All work is food safe, and most pieces are microwave and dishwasher safe unless noted otherwise.</p>
+    <!-- ============ STUDIO ============ -->
+    <section class="section section--paper" id="studio" aria-labelledby="studio-title">
+      <div class="wrap studio">
+        <figure class="studio__art reveal" aria-hidden="true">
+          <div class="studio__stamp"><span class="mark"></span></div>
+          <figcaption class="label">The maker's mark, pressed into every foot</figcaption>
+        </figure>
+        <div class="studio__text">
+          <p class="label label--accent reveal">From the studio</p>
+          <h2 id="studio-title" class="title reveal">Pots for the everyday</h2>
+          <p class="reveal">I'm Ben. I make the mugs, bowls and vases you'll actually reach for, thrown on the wheel and finished by hand.</p>
+          <p class="reveal">Every piece gets my BEN F stamp and a number on the foot. The F faces backwards on purpose.</p>
+          <ul class="facts reveal">
+            <li>Food-safe glazes</li>
+            <li>Dishwasher &amp; microwave safe unless noted</li>
+            <li>Numbered, one of a kind</li>
+          </ul>
         </div>
       </div>
     </section>
 
-    <section id="contact" class="contact">
-      <div class="container">
-        <h2>Get in touch</h2>
-        <p>Interested in a piece, a commission, or a wholesale order? Send a note.</p>
-        <a class="button" id="contact-email" href="#">Email the studio</a>
+    <!-- ============ COMMISSIONS / CONTACT ============ -->
+    <section class="section room--dark contact" id="contact" aria-labelledby="contact-title">
+      <div class="wrap contact__inner">
+        <p class="label label--accent reveal">Commissions &amp; questions</p>
+        <h2 id="contact-title" class="display display--md reveal">Want something made for&nbsp;you?</h2>
+        <p class="contact__lede reveal">Sets, gifts, a mug in a favorite color. Ask me anything.</p>
+        <div class="reveal">
+          <a class="btn btn--light" data-email-link href="#">Email Ben</a>
+          <p class="contact__email" data-email-text></p>
+        </div>
       </div>
     </section>
   </main>
 
-  <footer class="site-footer">
-    <div class="container">
-      <p>&copy; <span id="year"></span> Studio Name. All pieces handmade.</p>
+  <!-- ============ FOOTER ============ -->
+  <footer class="footer room--dark">
+    <div class="wrap footer__inner">
+      <span class="mark mark--footer" role="img" aria-label="BEN F"></span>
+      <nav class="footer__links" aria-label="Footer">
+        <a href="#work">Work</a>
+        <a href="#how">How to buy</a>
+        <a href="#studio">Studio</a>
+        <a href="#contact">Contact</a>
+      </nav>
+      <div class="footer__meta">
+        <p>Venmo <span class="venmo-handle">@finkalink</span></p>
+        <p>&copy; <span id="year"></span> BEN F Handmade Ceramics</p>
+      </div>
     </div>
   </footer>
 
-  <!-- Product detail dialog -->
-  <dialog id="product-dialog" class="product-dialog">
-    <button class="dialog-close" aria-label="Close" data-close>&times;</button>
-    <div class="dialog-body"></div>
+  <!-- ============ PIECE VIEW ("gallery room") ============ -->
+  <dialog class="room" id="room" aria-labelledby="room-title">
+    <div class="room__art" id="room-art">
+      <div class="room__frame" id="room-frame"></div>
+      <div class="room__arrows">
+        <button class="arrow" id="room-prev" aria-label="Previous piece">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7"/></svg>
+        </button>
+        <span class="room__count label" id="room-count"></span>
+        <button class="arrow" id="room-next" aria-label="Next piece">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="room__panel">
+      <button class="room__close" id="room-close" aria-label="Close">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+      <div class="room__content" id="room-content"></div>
+    </div>
   </dialog>
 
   <script src="js/products.js"></script>
+  <script src="js/pottery.js"></script>
   <script src="js/main.js"></script>
 </body>
 </html>
