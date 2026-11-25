@@ -93,7 +93,12 @@
 
   /* ---------------- New from the kiln ---------------- */
   function renderNew() {
-    const list = (SHOP.newPieces || []).map(byNo).filter(Boolean);
+    let list = (SHOP.newPieces || []).map(byNo).filter(Boolean);
+    // None picked in the Studio? Numbers run in order, so show the 3 newest.
+    if (!list.length) {
+      list = [...PRODUCTS].sort((a, b) => b.no.localeCompare(a.no, undefined, { numeric: true })).slice(0, 3);
+    }
+    $("#new").hidden = list.length === 0;
     $("#new-grid").innerHTML = list.map((p, i) => card(p, i)).join("");
   }
 
@@ -229,7 +234,7 @@
   function scaleFor(p) {
     const step = p.price <= 20 ? 1 : 5;
     const round = (v) => Math.max(step, Math.round(v / step) * step);
-    return { min: step, max: round(p.price * 2), step }; // any amount is welcome
+    return { min: 5, max: round(p.price * 2), step }; // any amount from $5 up is welcome
   }
 
   function venmoUrl(p) {
