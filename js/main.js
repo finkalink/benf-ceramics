@@ -229,7 +229,7 @@
   function scaleFor(p) {
     const step = p.price <= 20 ? 1 : 5;
     const round = (v) => Math.max(step, Math.round(v / step) * step);
-    return { min: round(p.price * 0.5), max: round(p.price * 2), step };
+    return { min: step, max: round(p.price * 2), step }; // any amount is welcome
   }
 
   function venmoUrl(p) {
@@ -245,7 +245,7 @@
     let action;
     if (st === "available") {
       action = `<button type="button" class="btn btn--block" data-action="buy">Buy this piece</button>
-        <p class="room__note">Sliding scale: pay what works for you, then mark it reserved or purchased. Pickup is free, and I'll quote shipping by email.</p>`;
+        <p class="room__note">Pay what feels right. Everything goes toward classes and studio time. Pickup is free, and I'll quote shipping by email.</p>`;
     } else if (st === "held-you" || st === "yours") {
       action = `<p class="room__note">You let me know about this one. I'll confirm with you directly.</p>
         ${st === "held-you" ? `<a class="btn btn--block" href="${venmoUrl(p)}" target="_blank" rel="noopener">Pay ${money.format(amountFor(p))} on Venmo ${ICON_ARROW}</a>` : ""}`;
@@ -282,7 +282,7 @@
             min="${scaleFor(p).min}" max="${scaleFor(p).max}" step="${scaleFor(p).step}" value="${amountFor(p)}">
           <div class="scale__ends"><span>${money.format(scaleFor(p).min)}</span><button type="button" class="link" data-action="suggested">Suggested ${money.format(p.price)}</button><span>${money.format(scaleFor(p).max)}</span></div>
         </div>
-        <p class="buy__hint">Pay what works for you. Paying above the suggestion helps fund the next firing.</p>
+        <p class="buy__hint">Pay what feels right. I'm not selling for profit; it all goes toward classes and studio time.</p>
       </div>
 
       <div class="buy__step">

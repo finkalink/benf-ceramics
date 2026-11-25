@@ -923,3 +923,15 @@ strong { font-weight: 600; }
 
 /* Photos keep their own shape in the piece view (drawings stay 4:5) */
 .room__frame > img { aspect-ratio: auto; width: auto; height: auto; }
+
+/* ---------- Small notes ---------- */
+.section__note { margin: 14px 0 0; color: var(--stone-deep); font-size: 1rem; }
+.how__note {
+  margin: clamp(40px, 5vw, 64px) 0 0;
+  padding-top: 24px;
+  border-top: 1px solid var(--hairline);
+  max-width: 62ch;
+  font-size: 1.05rem;
+  color: var(--stone-deep);
+}
+.how__note strong { color: var(--ink); font-weight: 600; margin-right: 4px; }
