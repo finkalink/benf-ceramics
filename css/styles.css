@@ -997,3 +997,6 @@ strong { font-weight: 600; }
   color: var(--stone-deep);
 }
 .how__note strong { color: var(--ink); font-weight: 600; margin-right: 4px; }
+
+/* Headline accent word */
+.display__accent { color: var(--clay-light); }
