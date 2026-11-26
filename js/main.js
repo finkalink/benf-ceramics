@@ -45,12 +45,14 @@
     if (photos.length) {
       const i = Math.min(opts.index || 0, photos.length - 1);
       const n = photos.length > 1 ? ` (photo ${i + 1} of ${photos.length})` : "";
-      // Card crop from the Studio page (made in a 4:5 frame); fitted to each card's real shape on load
-      const c = opts.card && p.crops && p.crops[photos[i]];
+      // Photo crop from the Studio page (made in a 4:5 frame), used on cards and in the piece view;
+      // fitted to the frame's real shape on load
+      const c = (opts.card || opts.room) && p.crops && p.crops[photos[i]];
       const cropAttrs = c
         ? ` class="is-cropped" data-crop="${esc(JSON.stringify({ s: +c.s || 1, x: +(c.x ?? 50), y: +(c.y ?? 50) }))}" style="--s:${+c.s || 1};--x:${+(c.x ?? 50)};--y:${+(c.y ?? 50)}"`
         : "";
-      return `<img src="${esc(photos[i])}" alt="${esc(p.name)}, ${esc(p.glaze)} glaze${n}"${cropAttrs} loading="${opts.eager ? "eager" : "lazy"}" decoding="async">`;
+      const img = `<img src="${esc(photos[i])}" alt="${esc(p.name)}, ${esc(p.glaze)} glaze${n}"${cropAttrs} loading="${opts.eager ? "eager" : "lazy"}" decoding="async">`;
+      return c && opts.room ? `<div class="room__crop">${img}</div>` : img;
     }
     return Pottery.svg(p, { ...opts, label: `${p.name}, ${p.glaze} glaze` });
   }
@@ -499,7 +501,8 @@
     const n = Math.max(1, photosOf(current()).length);
     roomPhoto = ((i % n) + n) % n;
     if (direction) roomFrame.style.setProperty("--from", reduceMotion ? "0" : `${direction * 24}px`);
-    roomFrame.innerHTML = art(current(), { eager: true, index: roomPhoto, wall: "#FBF8F3", floor: "#EFE7DC" });
+    roomFrame.innerHTML = art(current(), { eager: true, room: true, index: roomPhoto, wall: "#FBF8F3", floor: "#EFE7DC" });
+    fitCardCrops(roomFrame);
     $$("#room-thumbs [data-photo]").forEach((b) => b.setAttribute("aria-pressed", String(+b.dataset.photo === roomPhoto)));
     $("#room-count").textContent = n > 1 ? `Photo ${roomPhoto + 1} of ${n}` : "";
   }

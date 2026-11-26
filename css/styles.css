@@ -746,7 +746,8 @@ strong { font-weight: 600; }
   overflow: hidden;
 }
 .room__frame > svg,
-.room__frame > img {
+.room__frame > img,
+.room__frame > .room__crop {
   max-width: 100%;
   max-height: 100%;
   width: auto;
@@ -756,6 +757,16 @@ strong { font-weight: 600; }
   animation: art-in .45s var(--ease-out);
 }
 @keyframes art-in { from { opacity: 0; transform: translateX(var(--from, 0)); } }
+/* A photo cropped in the Studio page fills a 4:5 frame (positioned by main.js) */
+.room__frame > .room__crop { position: relative; overflow: hidden; }
+.room__crop > img.is-cropped {
+  position: absolute;
+  left: 50%; top: 50%;
+  width: calc(var(--s) * 100%);
+  height: auto;
+  max-width: none;
+  transform: translate(calc(var(--x) * -1%), calc(var(--y) * -1%));
+}
 
 .room__arrows {
   display: flex;

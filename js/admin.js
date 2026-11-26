@@ -122,7 +122,7 @@
       speckle: !!p.speckle,
       images: Array.isArray(p.images) ? p.images.filter(Boolean) : (p.image ? [p.image] : []),
       hidden: !!p.hidden,
-      // Card crop per photo (only the cover's is used): { src: { s, x, y } } made in a 4:5 frame
+      // Crop per photo: { src: { s, x, y } } made in a 4:5 frame. Used on the piece page; the cover's also on its card
       crops: p.crops && typeof p.crops === "object" ? { ...p.crops } : {},
     };
   }
@@ -671,8 +671,8 @@
           aria-label="Show photo ${i + 1} first at the top of the homepage">${src === draftTop ? "★ Top photo" : "Use at top"}</button>
           <button type="button" class="photo__crop${draftCrops[src] ? " is-set" : ""}" data-crop
             aria-label="Adjust how photo ${i + 1} is cropped at the top of the homepage">${draftCrops[src] ? "Top crop ✓" : "Crop top"}</button>` : ""}
-        ${i === 0 ? `<button type="button" class="photo__cardcrop${draft.crops[src] ? " is-set" : ""}" data-cardcrop
-          aria-label="Adjust how this cover photo is cropped on its card">${draft.crops[src] ? "Card crop ✓" : "Crop card"}</button>` : ""}
+        <button type="button" class="photo__cardcrop${draft.crops[src] ? " is-set" : ""}" data-cardcrop
+          aria-label="Crop photo ${i + 1}">${draft.crops[src] ? "Cropped ✓" : "Crop"}</button>
         <div class="photo__tools">
           <button type="button" data-move="-1" aria-label="Move photo ${i + 1} earlier" ${i === 0 ? "disabled" : ""}>${arrowL}</button>
           <button type="button" data-remove class="is-remove" aria-label="Remove photo ${i + 1}">${cross}</button>
@@ -685,6 +685,13 @@
       </button></li>`;
     // With a single photo there's nothing to choose between
     if (imgs.length < 2) $$("#photos [data-top]").forEach((b) => b.remove());
+    // Tiles are 4:5 like the crop frame, so a cropped photo's tile shows exactly its crop
+    $$("#photos .photo[data-i]").forEach((li) => {
+      const c = draft.crops[imgs[+li.dataset.i]], img = li.querySelector("img");
+      if (!c || !img) return;
+      img.classList.add("is-cropped");
+      img.style.cssText = `--s:${c.s};--x:${c.x};--y:${c.y}`;
+    });
   }
 
   /* ---------- Homepage crop (featured work) ----------
@@ -726,9 +733,10 @@
     const img = $("#crop-img");
     crop.mode = mode;
     const card = mode === "card";
-    $("#crop-title").textContent = card ? "Crop the card photo" : "Crop for the top of the homepage";
+    const isCover = draft.images[0] === src;
+    $("#crop-title").textContent = card ? `Crop photo ${draft.images.indexOf(src) + 1}` : "Crop for the top of the homepage";
     $("#crop-intro").textContent = card
-      ? "This is the photo on this piece's card in the gallery. Drag to move and use the slider to zoom. Leave it alone and it stays centered automatically."
+      ? `Drag to move and use the slider to zoom. The piece page shows just what's in the frame${isCover ? ", and so does this piece's card in the gallery" : ""}. Leave it alone and the whole photo shows${isCover ? " (the card centers it automatically)" : ""}.`
       : "Pick a frame shape, then drag to move and use the slider to zoom. What's inside the frame is exactly what the homepage shows.";
     $("#crop-shapes").hidden = card;
     $("#crop-shape-note").hidden = card;
