@@ -495,10 +495,42 @@
     showView(detailsView(p));
   }
 
+  /* Click (or tap) the photo to zoom in; the zoomed view follows the mouse or finger.
+     Click again, press Esc, or change photos to zoom back out. */
+  const ZOOM = 2.5;
+  let zoomBox = null; // the photo's unzoomed position on screen while zoomed
+  const zoomTarget = () => {
+    const el = roomFrame.firstElementChild;
+    return el && (el.matches("img") || el.classList.contains("room__crop")) ? el : null;
+  };
+  const isZoomed = () => zoomBox !== null;
+  function aimZoom(e) {
+    const el = zoomTarget();
+    if (!el || !zoomBox) return;
+    const x = Math.min(100, Math.max(0, ((e.clientX - zoomBox.left) / zoomBox.width) * 100));
+    const y = Math.min(100, Math.max(0, ((e.clientY - zoomBox.top) / zoomBox.height) * 100));
+    el.style.transformOrigin = `${x}% ${y}%`;
+  }
+  function zoomIn(e) {
+    const el = zoomTarget();
+    if (!el) return;
+    zoomBox = el.getBoundingClientRect();
+    aimZoom(e);
+    el.style.scale = ZOOM;
+    roomFrame.classList.add("is-zoomed");
+  }
+  function zoomOut() {
+    const el = zoomTarget();
+    if (el) el.style.scale = "";
+    zoomBox = null;
+    roomFrame.classList.remove("is-zoomed");
+  }
+
   // The arrows on the photo step through this piece's photos (wrapping around)
   let roomPhoto = 0;
   function showPhoto(i, direction = 0) {
     const n = Math.max(1, photosOf(current()).length);
+    zoomOut();
     roomPhoto = ((i % n) + n) % n;
     if (direction) roomFrame.style.setProperty("--from", reduceMotion ? "0" : `${direction * 24}px`);
     roomFrame.innerHTML = art(current(), { eager: true, room: true, index: roomPhoto, wall: "#FBF8F3", floor: "#EFE7DC" });
@@ -671,7 +703,18 @@
     $("#photo-prev").addEventListener("click", () => stepPhoto(-1));
     $("#photo-next").addEventListener("click", () => stepPhoto(1));
     $("#room-close").addEventListener("click", closeRoom);
-    room.addEventListener("cancel", (e) => { e.preventDefault(); closeRoom(); });
+    room.addEventListener("cancel", (e) => { e.preventDefault(); if (isZoomed()) zoomOut(); else closeRoom(); });
+
+    // Click zoom on the photo. A drag (panning a zoomed photo by finger) isn't a click.
+    let downAt = null;
+    roomFrame.addEventListener("pointerdown", (e) => { downAt = { x: e.clientX, y: e.clientY }; });
+    roomFrame.addEventListener("click", (e) => {
+      if (downAt && Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y) > 10) return;
+      if (isZoomed()) zoomOut();
+      else if (zoomTarget() && zoomTarget().contains(e.target)) zoomIn(e);
+    });
+    roomFrame.addEventListener("pointermove", aimZoom);
+    addEventListener("resize", () => { if (isZoomed()) zoomOut(); });
     room.addEventListener("click", (e) => { if (e.target === room) closeRoom(); });
 
     roomContent.addEventListener("click", (e) => {
@@ -697,7 +740,7 @@
     const artEl = $("#room-art");
     artEl.addEventListener("touchstart", (e) => { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; }, { passive: true });
     artEl.addEventListener("touchend", (e) => {
-      if (x0 === null) return;
+      if (x0 === null || isZoomed()) { x0 = null; return; } // while zoomed, a drag pans instead
       const dx = e.changedTouches[0].clientX - x0;
       const dy = e.changedTouches[0].clientY - y0;
       if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) stepPhoto(dx < 0 ? 1 : -1);

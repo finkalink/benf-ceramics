@@ -757,6 +757,16 @@ strong { font-weight: 600; }
   animation: art-in .45s var(--ease-out);
 }
 @keyframes art-in { from { opacity: 0; transform: translateX(var(--from, 0)); } }
+/* Click zoom: the photo scales up around the pointer (main.js sets transform-origin as it moves) */
+.room__frame > img,
+.room__frame > .room__crop { cursor: zoom-in; transition: scale .35s var(--ease-out); }
+.room__frame.is-zoomed { touch-action: none; }
+.room__frame.is-zoomed > img,
+.room__frame.is-zoomed > .room__crop { cursor: zoom-out; }
+@media (prefers-reduced-motion: reduce) {
+  .room__frame > img,
+  .room__frame > .room__crop { transition: none; }
+}
 /* A photo cropped in the Studio page fills a 4:5 frame (positioned by main.js) */
 .room__frame > .room__crop { position: relative; overflow: hidden; }
 .room__crop > img.is-cropped {
